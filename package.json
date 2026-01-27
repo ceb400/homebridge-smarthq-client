@@ -4,16 +4,16 @@
   "type": "module",
   "version": "1.0.0",
   "private": true,
-  "description": "Interface with GE Profile refrigerator.",
+  "description": "Plugin for controlling GE refrigerator via SmartHQ API.",
   "author": "C Baumann",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/USERNAME/GITHUB_PROJECT_NAME#readme",
+  "homepage": "https://github.com/ceb400/homebridge-smarthq-client#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "https://github.com/ceb400/homebridge-smarthq-client.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/ceb400/homebridge-smarthq-client/issues"
   },
   "keywords": [
     "homebridge-plugin",
