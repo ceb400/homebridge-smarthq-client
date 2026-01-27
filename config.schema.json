@@ -1,0 +1,146 @@
+{
+  "pluginAlias": "SmartHqPlatform",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "required": ["clientId", "clientSecret"],
+    "properties": {
+      "clientId": {
+        "type": "string",
+        "title": "SmartHQ Client ID",
+        "x-schema-form": {
+          "type": "password"
+        }
+      },
+      "clientSecret": {
+        "type": "string",
+        "title": "SmartHQ Client Secret",
+        "x-schema-form": {
+          "type": "password"
+        }
+      },
+      "redirectUri": {
+        "type": "string",
+        "format": "uri",
+        "title": "OAuth Redirect URI (must match the one defined  for SmartHQ app @ https://developer.smarthq.com/user/???/apps",
+        "default": "http://localhost:8888/callback"
+      },
+      "addControlLock": {
+        "type": "boolean",
+        "title": "Add Controls Lock",
+        "default": false
+      },
+      "addConvertibleDrawer": {
+        "type": "boolean",
+        "title": "Add Convertible Drawer Controls",
+        "default": false
+      },
+      "addDispenserLight": {
+        "type": "boolean",
+        "title": "Add Dispenser Light Control",
+        "default": false
+      },
+      "addIceMaker": {
+        "type": "boolean",
+        "title": "Add Ice Maker Control",
+        "default": false
+      },
+      "addInteriorLight": {
+        "type": "boolean",
+        "title": "Add Interior Light Control",
+        "default": false
+      },
+      "addSabbathMode": {
+        "type": "boolean",
+        "title": "Add Sabbath Mode Control",
+        "default": false
+      },
+      "addTemperatureUnits": {
+        "type": "boolean",
+        "title": "Add Temperature Units Control",
+        "default": false
+      },
+      "addEnergyMonitor": {
+        "type": "boolean",
+        "title": "Add Energy Monitor",
+        "default": false
+      },
+      "addTurboCool": {
+        "type": "boolean",
+        "title": "Add Turbo Cool Controls",
+        "default": false
+      },
+      "addWaterFilter": {
+        "type": "boolean",
+        "title": "Add Water Filter Status",
+        "default": false
+      },
+      "addAlerts": {
+        "type": "boolean",
+        "title": "Add Alert Notifications",
+        "default": false
+      },
+      "debugLogging": {
+        "type": "boolean",
+        "title": "Plugin Debug Logging w/Chalk Colors",
+        "default": true
+      },
+      "debugServices": {
+        "type": "boolean",
+        "title": "Display Service Details for all discovered services",
+        "default": true
+      }
+    }
+  },
+  "layout": [
+    {
+      "type": "section",
+      "title": "Authentication Settings",
+      "items": [
+        {
+          "description": "Required SmartHQ API authentication settings.",
+          "items": [
+            "clientId",
+            "clientSecret",
+            "redirectUri"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Refrigerator Services",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "description": "Include the selected refrigerator services.",
+          "items": [
+            "addConvertibleDrawer",
+            "addControlLock",
+            "addDispenserLight",
+            "addEnergyMonitor",
+            "addIceMaker",
+            "addInteriorLight",
+            "addSabbathMode",
+            "addTemperatureUnits",
+            "addTurboCool",
+            "addWaterFilter",
+            "addAlerts"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Logging Options",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "debugLogging",
+        "debugServices"
+      ]
+    }
+  ]
+}
