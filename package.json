@@ -3,7 +3,7 @@
   "displayName": "SmartHQ",
   "type": "module",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "description": "Plugin for controlling GE refrigerator via SmartHQ API.",
   "author": "C Baumann",
   "license": "Apache-2.0",
@@ -19,6 +19,8 @@
     "homebridge-plugin",
     "smarthq",
     "GE Refrigerator",
+    "refrigerator",
+    "smart appliance",
     "OAuth2"
   ],
   "main": "dist/index.js",
