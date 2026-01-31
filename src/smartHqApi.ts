@@ -134,17 +134,17 @@ export class SmartHqApi {
       if (error.response) {
         switch (error.response.status) {
           case 400:
-            this.platform.log.error('(400) Bad Request: ', error.response.statusText);
+            this.platform.log.error('(400) Bad Request: ', error.message);
             break;
           case 401:
             this.refreshAccessToken();
-            //this.platform.log.error('(401) Unauthorized: ', error.response.statusText);   token expired - refresh token instead of error
+            //this.platform.log.error('(401) Unauthorized: ', error.message);   token expired - refresh token instead of error
             break;
           case 403:
-            this.platform.log.error('(403) Forbidden client does not have permission to view device: ', error.response.statusText);
+            this.platform.log.error('(403) Forbidden client does not have permission to view device: ', error.message);
             break;
           default:
-            this.platform.log.error('Error in getAppliances(): ', error.response.statusText);
+            this.platform.log.error('Error in getAppliances(): ', error.message);
             break;
         }
       }  else {
@@ -164,7 +164,7 @@ export class SmartHqApi {
       );
       if (!response.data) {
         this.platform.log.error(
-          `Request ${url} failed with status ${response.status} - ${response.statusText}.`
+          `Request ${url} failed with status ${response.status}`
         );
         return;
       }
@@ -204,7 +204,7 @@ export class SmartHqApi {
         }
         if (!response.data) {
           this.platform.log.error(
-            `Request ${url} failed with status ${response.status} - ${response.statusText}.`
+            `Request ${url} failed with status ${response.status}`
           );
           return;
         }
@@ -214,7 +214,7 @@ export class SmartHqApi {
         await this.refreshAccessToken();
         this.debug('red', 'Token refreshed in getDeviceServices.');
       } else {
-        this.platform.log.error('Error from getDeviceServices():', + error.response.statusText);
+        this.platform.log.error('Error from getDeviceServices():', + error.message);
       }
     }
   }
@@ -233,7 +233,7 @@ export class SmartHqApi {
         await this.refreshAccessToken();
         this.debug('red', 'Token refreshed in getDeviceServices.');
       } else {
-        this.platform.log.error('Error getting recent alerts:', + error.response.statusText);
+        this.platform.log.error('Error getting recent alerts:', + error.message);
       }
     } 
   }

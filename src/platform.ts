@@ -205,59 +205,47 @@ export class SmartHqPlatform {
       this.log.info(chalk.yellow(`SmartHQ Discovered device: ${device.nickname} Model: ${device.model}`));
 
       // Used to acquire service IDs and service deviceTypes for deviceServiceState queries
-
       const deviceServices =  await this.smartHqApi.getDeviceServices(device.deviceId);
+
+      var accessoryType: PlatformAccessory | undefined;
       
       const uuid = this.api.hap.uuid.generate(device.deviceId);
-
       const existingAccessory = this.accessories.get(uuid);
 
       // for existing accessories restore from cache
 
       if (existingAccessory) {
-          this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-          existingAccessory.context.device = device;
-          this.api.updatePlatformAccessories([existingAccessory]);
-    
-          // Setup services based on device type when there are multiple device types in account
-          // add more case statements e.g. Washer, Dryer, Oven, etc.
-
-          switch (device.nickname) {
-            case 'Refrigerator':
-              this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
-              setupRefrigeratorServices.call(this, existingAccessory, device, deviceServices);
-              break;
-            case 'someNewAppliance':
-              this.debug('green', `Logic not implemented for ${device.nickname}`);
-              break;
-            default:
-              this.debug('red', `not implemented device :  for device ${device.nickname}`);
-          }
+        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+        accessoryType = existingAccessory;
+        existingAccessory.context.device = device;
+        this.api.updatePlatformAccessories([existingAccessory]);
       } else {
 
-        // create new accessory
+      // create new accessory
 
-          this.log.info('Adding new accessory:', device.nickname);
-          const accessory = new this.api.platformAccessory(device.nickname, uuid);
+        this.log.info('Adding new accessory:', device.nickname);
+        const accessory = new this.api.platformAccessory(device.nickname, uuid);
+        accessoryType = accessory;
 
-          accessory.context.device = device;
-          
-          switch (device.nickname) {
-            case 'Refrigerator':
-              this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
-              setupRefrigeratorServices.call(this, accessory, device, deviceServices);
-              break;
-            case 'someNewAppliance':
-              this.debug('green', `Logic not implemented for ${device.nickname}`);
-              break;
-            default:
-              this.debug('red', `not implemented device :  for device ${device.nickname}`);
-          }
-          
-          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        accessory.context.device = device;
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
-
       this.discoveredCacheUUIDs.push(uuid);
+
+      // Setup services based on device type when there are multiple device types in account
+      // add more case statements e.g. Washer, Dryer, Oven, etc.
+
+      switch (device.nickname) {
+        case 'Refrigerator':
+          this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
+          setupRefrigeratorServices.call(this, accessoryType, device, deviceServices);
+          break;
+        case 'someNewAppliance':
+          this.debug('green', `Logic not implemented for ${device.nickname}`);
+          break;
+        default:
+          this.debug('red', `not implemented device :  for device ${device.nickname}`);
+      }
     }
 
     // remove accessories from the cache which are no longer present

@@ -13,6 +13,7 @@ The refrigerator services include controls for:
 * sabbath mode
 * temperature units
 * turbo cool modes refrigerator & freezer
+* water filter maintenance (see notes)
 * additional switches are used to implement notifications
 
 
@@ -113,6 +114,12 @@ These switches will appear in Accessories as *Alert Door*, *Alert Temp*, *Alert 
 ## Documentation
 
 [SmartHQ Documentation](https://developer.smarthq.com/)
+
+## Notes  
+The *water filter maintenance* option uses the Filter Maintenance Service in the Homebridge API.  
+The service exists in HomeKit but has not been implemented in the Apple Home app.   
+If selected in the plugin config you will notice a tile on the Homebridge Accessories page but there   
+will not be any tile/device shown in the Home app.
 
 
 ## Feedback

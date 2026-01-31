@@ -1,4 +1,4 @@
-import { CharacteristicValue, PlatformAccessory, PlatformConfig, Logging } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging, Characteristic } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
 
@@ -60,12 +60,13 @@ export class EnergySensor {
     //=====================================================================================
     try {
       energyCurrent.setProps({
-        minValue: -33.0,
-        maxValue: 50000.0,
+        unit: 'kWh',
+        minValue: -30.0,
+        maxValue: 50000000.0,
         minStep: 1.0
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Freezer Current Temperature properties: ');
+      this.platform.debug('blue', 'Error setting Energy sensor properties: ');
     }
 
     //energySensor.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
