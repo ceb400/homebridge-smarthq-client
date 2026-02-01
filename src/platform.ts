@@ -9,6 +9,8 @@ import { SmartHqApi }         from './smartHqApi.js';
 import { EventEmitter }       from 'node:events';
 import { PLATFORM_NAME, PLUGIN_NAME, AUTH_URL, TOKEN_STORE } from './settings.js';
 import { setupRefrigeratorServices }   from './refrigeratorServices.js';
+import { DevDevice, DevService } from './smarthq-types.js';
+import { Server } from 'node:http';
 
 export class SmartHqPlatform {
   public readonly Service: typeof Service;
@@ -18,8 +20,7 @@ export class SmartHqPlatform {
   public readonly accessories: Map<string, PlatformAccessory> = new Map();
   public readonly discoveredCacheUUIDs: string[] = [];
   public readonly tokenPath: string;
-  private oauthServer?: any;
-  public smarthqInfo?: any;
+  private oauthServer?: Server;
   public expires: number;
   public readonly smartHqApi: SmartHqApi;
   public authEmitter: EventEmitter
@@ -111,7 +112,7 @@ export class SmartHqPlatform {
 
     // Clicking above link in Homebridge UI will redirect to SmartHQ authorization endpoint 
 
-    app.get('/login', async (_req: any, res: any) => {
+    app.get('/login', async (_req, res) => {
 
       try {
 
@@ -133,7 +134,7 @@ export class SmartHqPlatform {
     // with authorization code in the query parameter.
     // We will use this code to obtain access token and refresh token
 
-    app.get(pathname, async (req: any, res: any) => {
+    app.get(pathname, async (req, res) => {
       try {
         // Parse the request URL
         const query = parse(req.url!.split('?')[1]);
@@ -157,7 +158,7 @@ export class SmartHqPlatform {
 
         this.log.success('SmartHQ authentication completed');
 
-        setTimeout(() => this.oauthServer.close(), 1000);
+        setTimeout(() => this.oauthServer?.close(), 1000);
         this.debug('blue', 'OAuth server has been closed.');
         return;
 
@@ -192,7 +193,7 @@ export class SmartHqPlatform {
 
   private async discoverDevices() {
     this.debug('yellow', '(discoverDevices) Starting device discovery...'); 
-    let devices: any[] = [];
+    let devices: DevDevice[] = [];
     devices =  await this.smartHqApi.getAppliances();
     
     // loop over the discovered devices and register each one if it has not already been registered
@@ -207,7 +208,7 @@ export class SmartHqPlatform {
       // Used to acquire service IDs and service deviceTypes for deviceServiceState queries
       const deviceServices =  await this.smartHqApi.getDeviceServices(device.deviceId);
 
-      var accessoryType: PlatformAccessory | undefined;
+      let accessoryType: PlatformAccessory | undefined;
       
       const uuid = this.api.hap.uuid.generate(device.deviceId);
       const existingAccessory = this.accessories.get(uuid);
@@ -283,7 +284,7 @@ export class SmartHqPlatform {
 
   // Some models may not have all services available so don't add service if not supported
   
-  public deviceSupportsThisService(deviceServices: any[], 
+  public deviceSupportsThisService(deviceServices: DevService[], 
                                 serviceDeviceType: string, 
                                 serviceType: string,
                                 domainType: string): boolean {

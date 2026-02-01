@@ -1,6 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, PlatformConfig, Logging } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -14,7 +15,7 @@ private readonly smartHqApi: SmartHqApi;
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -38,7 +39,7 @@ private readonly smartHqApi: SmartHqApi;
     //=====================================================================================
     // create a new Lightbulb service for the Refrigerator Wall Brightness Light
     //=====================================================================================
-    let displayName = "Fridge Light"; 
+    const displayName = "Fridge Light"; 
     const refrigeratorLight = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.Lightbulb, displayName, 'brightness-light-2');
     
@@ -59,7 +60,7 @@ private readonly smartHqApi: SmartHqApi;
 
   //=====================================================================================
   async getFridgeBackLight(): Promise<CharacteristicValue> {
-    var brightness = 0;
+    let brightness = 0;
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator' 
         && service.serviceType       === 'cloud.smarthq.service.integer') {
@@ -109,6 +110,9 @@ private readonly smartHqApi: SmartHqApi;
   //=====================================================================================
   async setRefrigBrightnessLightOn(value: CharacteristicValue) {
     // SmartHQ API does not have an On/Off command for the refrigerator brightness light only brightness level 0-100
+    if (value === false) {
+      return
+    }
     
   }
 }

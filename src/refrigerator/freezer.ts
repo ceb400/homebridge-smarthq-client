@@ -1,7 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, PlatformConfig, Logging } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
-import chalk from 'chalk';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -20,7 +20,7 @@ export class Freezer {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -35,7 +35,7 @@ export class Freezer {
     //=====================================================================================
     // create a new Thermostat service for the Freezer
     //===================================================================================== 
-    let displayName = "Freezer";
+    const displayName = "Freezer";
     const freezerThermostat = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.Thermostat, displayName, 'freezer-thermo1');
     freezerThermostat.setCharacteristic(this.platform.Characteristic.Name, displayName);
@@ -69,7 +69,7 @@ export class Freezer {
         minStep: 0.1
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Freezer Current Temperature properties: ');
+      this.platform.debug('blue', 'Error setting Freezer Current Temperature properties: ' + error);
     }
   //=====================================================================================
   // Change properties for the characteristic for a GE Profile Refrigerator temperature range is -21.111C (-6F) to -15C (5F)
@@ -82,7 +82,7 @@ export class Freezer {
       minStep: 0.1
     });
   } catch (error) {
-    this.platform.debug('blue', 'Error setting Freezer Target Temperature properties: ');
+    this.platform.debug('blue', 'Error setting Freezer Target Temperature properties: ' + error);
   }
 
   // create handlers for required characteristics
@@ -119,7 +119,7 @@ export class Freezer {
 
   //=====================================================================================
   async getFreezerTemperature(): Promise<CharacteristicValue> {
-    var temp = 0;
+    let temp = 0;
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.freezer' 
         && service.serviceType       === 'cloud.smarthq.service.temperature') {
@@ -192,7 +192,8 @@ export class Freezer {
     // Nothing to do since refrigerator can only be in COOL mode
   
     const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
-
+    this.platform.debug('blue', 'setTargetHeatingCoolingState value: ' + value + ', returning: ' + currentValue);
+    
     return currentValue;
   }
 
@@ -219,6 +220,7 @@ export class Freezer {
    */
   //=====================================================================================
   handleTemperatureDisplayUnitsSet(value: CharacteristicValue) {
+    this.platform.debug('blue', 'handleTemperatureDisplayUnitsSet value: ' + value);
   }
 
 

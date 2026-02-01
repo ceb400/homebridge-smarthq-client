@@ -84,12 +84,12 @@
       "debugLogging": {
         "type": "boolean",
         "title": "Plugin Debug Logging w/Chalk Colors",
-        "default": true
+        "default": false
       },
       "debugServices": {
         "type": "boolean",
         "title": "Display Service Details for all discovered services",
-        "default": true
+        "default": false
       }
     }
   },

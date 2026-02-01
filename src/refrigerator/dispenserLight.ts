@@ -1,6 +1,7 @@
 import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -14,7 +15,7 @@ private readonly smartHqApi: SmartHqApi;
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -41,7 +42,7 @@ private readonly smartHqApi: SmartHqApi;
     //=====================================================================================
     // create a Dispenser Light switch for the Refrigerator 
     //=====================================================================================
-    let displayName = "Dispenser Light"; 
+    const displayName = "Dispenser Light"; 
 
     const dispenserLight = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.Switch, displayName, 'dispenser-light-123');

@@ -2,6 +2,7 @@ import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform }  from '../platform.js';
 import { SmartHqApi }       from '../smartHqApi.js';
 import chalk                from 'chalk';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -22,7 +23,7 @@ export class RefrigeratorAlerts {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;

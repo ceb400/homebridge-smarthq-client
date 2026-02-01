@@ -1,6 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, PlatformConfig, Logging } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -15,7 +16,7 @@ export class IceMaker {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -38,7 +39,7 @@ export class IceMaker {
     //=====================================================================================
     // create a Ice Maker switch for the Refrigerator 
     //=====================================================================================
-    let displayName = "Ice Maker"; 
+    const displayName = "Ice Maker"; 
 
     const iceMaker = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.Switch, displayName, 'ice-maker-123');

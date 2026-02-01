@@ -1,6 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, PlatformConfig, Logging } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -17,7 +18,7 @@ export class Refrigerator {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -39,7 +40,7 @@ export class Refrigerator {
     //=====================================================================================
     // create a new Thermostat service for the Refrigerator
     //===================================================================================== 
-    let displayName = "Refrigerator";
+    const displayName = "Refrigerator";
     const refrigeratorThermostat = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.Thermostat, displayName, 'fridge-thermo1');
     // set the service name, this is what is displayed as the default name on the Home app
@@ -74,7 +75,7 @@ export class Refrigerator {
         minStep: 0.1
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Refrigerator Current Temperature properties: ');
+      this.platform.debug('blue', 'Error setting Refrigerator Current Temperature properties: ' + error);
     }
       
       // Change properties for the characteristic for a GE Profile Refrigerator temperature range is 1.111C (34F) to 5.556C (42F)
@@ -86,7 +87,7 @@ export class Refrigerator {
         minStep: 0.1
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Refrigerator Target Temperature properties: ');
+      this.platform.debug('blue', 'Error setting Refrigerator Target Temperature properties: ' + error);
     }
 
     // create handlers for required characteristics
@@ -125,7 +126,7 @@ export class Refrigerator {
   // Refrigerator Temperature Handlers using SmartHQ API commands in smartHqApi.ts
   //=====================================================================================
   async getFridgeTemperature(): Promise<CharacteristicValue> {
-    var temp = 0;
+    let temp = 0;
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.freshfood' 
         && service.serviceType       === 'cloud.smarthq.service.temperature') {
@@ -200,7 +201,7 @@ export class Refrigerator {
   //=====================================================================================
   setTargetHeatingCoolingState(value: CharacteristicValue) {
     // Nothing to do since refrigerator can only be in COOL mode
-  
+    this.platform.debug('green', 'setTargetHeatingCoolingState called with value: ' + value);
     const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
 
     return currentValue;
@@ -233,7 +234,8 @@ export class Refrigerator {
    */
   //=====================================================================================
   handleTemperatureDisplayUnitsSet(value: CharacteristicValue) {
+    if (value === this.platform.Characteristic.TemperatureDisplayUnits.FAHRENHEIT) {
+      this.platform.debug('green', 'Temperature Display Units set to FAHRENHEIT');
+    }
   }
-
-  
 }

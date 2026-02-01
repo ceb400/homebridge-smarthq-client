@@ -1,6 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, Logging, Characteristic } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -16,7 +17,7 @@ export class EnergySensor {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -46,7 +47,7 @@ export class EnergySensor {
     // This works in Homebridge and HomeKit has a native FilterMaintenance service type but the Home app does not implement it yet 
     // so no sensor/accessory will show up in the Home app for this service type.
     //===================================================================================== 
-    let displayName = "Watts/hr";
+    const displayName = "Watts/hr";
     const energySensor = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.TemperatureSensor, displayName, 'energy-2');
     energySensor.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
@@ -66,7 +67,7 @@ export class EnergySensor {
         minStep: 1.0
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Energy sensor properties: ');
+      this.platform.debug('blue', 'Error setting Energy sensor properties: ' + error);
     }
 
     //energySensor.getCharacteristic(this.platform.Characteristic.CurrentTemperature)

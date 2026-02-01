@@ -1,6 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, PlatformConfig, Logging } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -15,7 +16,7 @@ export class WaterFilter {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -45,7 +46,7 @@ export class WaterFilter {
     // This works in Homebridge and HomeKit has a native FilterMaintenance service type but the Home app does not implement it yet 
     // so no sensor/accessory will show up in the Home app for this service type.
     //===================================================================================== 
-    let displayName = "Filter Life";
+    const displayName = "Filter Life";
     const refrigeratorWaterFilter = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.FilterMaintenance, displayName, 'filter-maintenance-1');
     refrigeratorWaterFilter.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)

@@ -1,6 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, PlatformConfig, Logging } from 'homebridge';
+import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -23,7 +24,7 @@ export class ConvertibleDrawer {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -122,8 +123,8 @@ export class ConvertibleDrawer {
 
   //=====================================================================================
   async getDrawerTemperature(): Promise<CharacteristicValue> {
-    var temp = 0;
-    var mode = '0';
+    let temp = 0;
+    let mode = '0';
 
     // First you need to find which mode is set for the Convertible Drawer
 
@@ -136,7 +137,7 @@ export class ConvertibleDrawer {
           this.platform.debug('blue', 'No mode returned from getDrawerTemperature state');
           break;     // an invalid mode value will be used below so no match will be found
         }
-        let result = state?.mode.lastIndexOf(".");
+        const result = state?.mode.lastIndexOf(".");
         mode = state?.mode.slice(result + 1); 
         break;
       } 
@@ -292,7 +293,7 @@ export class ConvertibleDrawer {
 
 //=====================================================================================
   async setConvertibleDrawerBeverages(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setConvertibleDrawerBeverages");
+    this.platform.debug('blue', "Triggered setConvertibleDrawerBeverages value: " + value);
     
     const cmdBody = {
       command: {
@@ -321,7 +322,7 @@ export class ConvertibleDrawer {
 
 //=====================================================================================
   async setConvertibleDrawerSnacks(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setConvertibleDrawerSnacks");
+    this.platform.debug('blue', "Triggered setConvertibleDrawerSnacks value: " + value);
 
     const cmdBody = {
       command: {
@@ -349,7 +350,7 @@ export class ConvertibleDrawer {
   }
   //=====================================================================================
   async setConvertibleDrawerWine(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setConvertibleDrawerWine");
+    this.platform.debug('blue', "Triggered setConvertibleDrawerWine value: " + value);
    
     const cmdBody = {
       command: {

@@ -1,10 +1,11 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosResponse, isAxiosError } from 'axios';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { stringify } from 'querystring';
 import chalk from 'chalk';
 
 import { API_URL, AUTH_URL, ACCESSTOKEN_URL} from './settings.js';
 import { SmartHqPlatform } from './platform.js';
+import { DevService } from './smarthq-types.js';
 
 /**
  * SmartHq Api functions         
@@ -50,7 +51,7 @@ export class SmartHqApi {
       );
      
       this.saveToken(response.data);
-    } catch (error: AxiosError | any) {
+    } catch (error) {
       // Use isAxiosError type guard for safe property access
       if (axios.isAxiosError(error)) {
         if (error.response) {
@@ -92,14 +93,14 @@ export class SmartHqApi {
     });
   }
 
-  saveToken(data: any) {
+  saveToken(data: AxiosResponse['data']) {
     Object.assign(this, data);
     
     this.expires = Date.now() + data.expires_in * 1000;
     try {
       writeFileSync(this.platform.tokenPath, JSON.stringify(data, null, 2));
-    } catch (error: any) {
-      this.platform.log.error('Error saving token: ', error.message);
+    } catch (error) {
+      this.platform.log.error('Error saving token: ', error);
     }
   }
 
@@ -130,25 +131,27 @@ export class SmartHqApi {
         { headers: await this.httpHeaders() }
       );
       return res.data.devices;
-    } catch (error: AxiosError | any) {
-      if (error.response) {
-        switch (error.response.status) {
-          case 400:
-            this.platform.log.error('(400) Bad Request: ', error.message);
-            break;
-          case 401:
-            this.refreshAccessToken();
-            //this.platform.log.error('(401) Unauthorized: ', error.message);   token expired - refresh token instead of error
-            break;
-          case 403:
-            this.platform.log.error('(403) Forbidden client does not have permission to view device: ', error.message);
-            break;
-          default:
-            this.platform.log.error('Error in getAppliances(): ', error.message);
-            break;
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response) {
+          switch (error.response.status) {
+            case 400:
+              this.platform.log.error('(400) Bad Request: ', error.message);
+              break;
+            case 401:
+              this.refreshAccessToken();
+              //this.platform.log.error('(401) Unauthorized: ', error.message);   token expired - refresh token instead of error
+              break;
+            case 403:
+              this.platform.log.error('(403) Forbidden client does not have permission to view device: ', error.message);
+              break;
+            default:
+              this.platform.log.error('Error in getAppliances(): ', error.message);
+              break;
+          }
+        }  else {
+          this.debug('red', ('Still here too early.'));
         }
-      }  else {
-        this.debug('red', ('Still here too early.'));
       }
     }
   }
@@ -170,13 +173,19 @@ export class SmartHqApi {
       }
       return response.data.state;
       
-    } catch (error: AxiosError | any) {
-      if (error.response && error.response.status === 401) {
-        await this.refreshAccessToken();
-        this.debug('red', 'Token refreshed in getServiceState.');
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response && error.response.status === 401) {
+          await this.refreshAccessToken();
+          this.debug('red', 'Token refreshed in getServiceState.');
+        }
       }
     }
   }
+
+
+
+
 
   async getDeviceServices(deviceId: string) {
     const url = new URL(`/v2/device/${deviceId}`, API_URL);
@@ -184,7 +193,8 @@ export class SmartHqApi {
         const response = await axios.get(url.toString(),
           { headers: await this.httpHeaders() }
         );
-        const sortedServices = response.data.services.sort((a: any, b: any) => {
+        const services: DevService[] = response.data.services;
+        const sortedServices = services.sort((a, b) => {
           if (a.serviceDeviceType < b.serviceDeviceType) return -1;
           if (a.serviceDeviceType > b.serviceDeviceType) return 1;
           return 0;
@@ -209,12 +219,14 @@ export class SmartHqApi {
           return;
         }
         return response.data.services;
-    } catch (error: AxiosError | any) {
-      if (error.response && error.response.status === 401) {
-        await this.refreshAccessToken();
-        this.debug('red', 'Token refreshed in getDeviceServices.');
-      } else {
-        this.platform.log.error('Error from getDeviceServices():', + error.message);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response && error.response.status === 401) {
+          await this.refreshAccessToken();
+          this.debug('red', 'Token refreshed in getDeviceServices.');
+        } else {
+          this.platform.log.error('Error from getDeviceServices():', error.message);
+        }
       }
     }
   }
@@ -228,14 +240,16 @@ export class SmartHqApi {
         );
         return res.data.alerts;
 
-    } catch (error: AxiosError | any) {
-      if (error.response && error.response.status === 401) {
-        await this.refreshAccessToken();
-        this.debug('red', 'Token refreshed in getDeviceServices.');
-      } else {
-        this.platform.log.error('Error getting recent alerts:', + error.message);
-      }
-    } 
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response && error.response.status === 401) {
+          await this.refreshAccessToken();
+          this.debug('red', 'Token refreshed in getRecentAlerts.');
+        } else {
+          this.platform.log.error('Error getting recent alerts:', + error.message);
+        }
+      } 
+    }
   }
 
   async command(body: string) {
@@ -249,16 +263,16 @@ export class SmartHqApi {
       );
       return response.data;
 
-    } catch (error: AxiosError | any) {
-      if (error.response && error.response.status === 401) {
-        await this.refreshAccessToken();
-        this.debug('red', 'Token refreshed in command.');
-      } else {
-        this.platform.log.error('Error sending command:', body);
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          this.platform.log(error.response.data);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response && error.response.status === 401) {
+          await this.refreshAccessToken();
+          this.debug('red', 'Token refreshed in command.');
+        } else {
+          this.platform.log.error('Error sending command:', body);
+          if (error.response) {       // that falls out of the range of 2xx
+            this.platform.log(error.response.data);
+          }
         }
       }
   }

@@ -1,6 +1,7 @@
 import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
 import { SmartHqPlatform } from '../platform.js';
 import { SmartHqApi } from '../smartHqApi.js';
+import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -14,7 +15,7 @@ export class SabbathMode {
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: any[],
+    public readonly deviceServices: DevService[],
     public readonly deviceId: string
     ) {
     this.platform = platform;
@@ -49,7 +50,7 @@ export class SabbathMode {
     //=====================================================================================
     // create a sabbath mode switch for the Refrigerator 
     //=====================================================================================
-    let displayName = "Sabbath Mode"; 
+    const displayName = "Sabbath Mode"; 
 
     const sabbathMode = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.Switch, displayName, 'sabbathmode123');
