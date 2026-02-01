@@ -126,7 +126,7 @@ will not be any tile/device shown in the Home app.
 
 ## Feedback
 
-If you have any feedback, please reach out at: chuck.e.baumann@gmail.com
+If you have any feedback, please reach out at: ceb40win@outlook.com
 
 If you have GE smart appliances other than refrigerator you can capture
 the following information (after adding the appliance to your SmartHQ account)
