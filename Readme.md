@@ -1,3 +1,5 @@
+<img src="images/homebridge.svg" width="200" height="200">   
+
 # Homebridge-SmartHQ Client
 
 A homebridge plugin for GE appliances using the SmartHQ API s (Identity and Access Management API, Digital Twin API).  Currently only services for a refrigerator are implemented.
