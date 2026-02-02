@@ -1,6 +1,6 @@
 {
   "name": "homebridge-smarthq-client",
-  "displayName": "SmartHQ",
+  "displayName": "Homebridge GE SmartHQ",
   "type": "module",
   "version": "1.0.0",
   "private": false,
