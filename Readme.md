@@ -1,4 +1,4 @@
-<img src="images/homebridge.svg" width="200" height="200">   
+<img src="images/homebridge.svg" width="100" height="100">   
 
 # Homebridge-SmartHQ Client
 
