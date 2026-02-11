@@ -121,7 +121,9 @@ These switches will appear in Accessories as *Alert Door*, *Alert Temp*, *Alert 
 The *water filter maintenance* option uses the Filter Maintenance Service in the Homebridge API.  
 The service exists in HomeKit but has not been implemented in the Apple Home app.   
 If selected in the plugin config you will notice a tile on the Homebridge Accessories page but there   
-will not be any tile/device shown in the Home app.
+will not be any tile/device shown in the Home app. 
+ 
+2/11/26 Added a lightbulb service Brightness characteristic to show remaining water filter %.  (this will be displayed in HomeKit)
 
 
 ## Feedback

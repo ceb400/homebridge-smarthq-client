@@ -45,12 +45,26 @@ export class WaterFilter {
     // create a new water FilterMaintenance service for the Refrigerator
     // This works in Homebridge and HomeKit has a native FilterMaintenance service type but the Home app does not implement it yet 
     // so no sensor/accessory will show up in the Home app for this service type.
+    // Create a Lightbulb service instead and use the FilterMaintenance characteristics to show filter life and change indication. 
     //===================================================================================== 
     const displayName = "Filter Life";
+    const displayName2 = "Filter Life Level";
     const refrigeratorWaterFilter = this.accessory.getService(displayName) 
     || this.accessory.addService(this.platform.Service.FilterMaintenance, displayName, 'filter-maintenance-1');
     refrigeratorWaterFilter.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
     refrigeratorWaterFilter.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+
+    // add a lightbulb service to show the filter life level as a percentage in the Home app 
+    const refrigeratorPseudoFilter = this.accessory.getService(displayName2) 
+    || this.accessory.addService(this.platform.Service.Lightbulb, displayName2, 'filter-maintenance-2');
+
+    this.platform.debug('green', 'Adding a pseudo Water Filter Level indicator');
+    refrigeratorPseudoFilter.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
+    refrigeratorPseudoFilter.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName2)
+    refrigeratorPseudoFilter.getCharacteristic(this.platform.Characteristic.On).updateValue(true);
+    refrigeratorPseudoFilter.getCharacteristic(this.platform.Characteristic.Brightness)
+      .onGet(this.getWaterFilterLifeLevel.bind(this))
+      .onSet(this.getWaterFilterLifeLevel.bind(this)); 
 
     refrigeratorWaterFilter.getCharacteristic(this.platform.Characteristic.FilterChangeIndication)
       .onGet(this.getWaterFilterChangeIndication.bind(this));
@@ -101,6 +115,9 @@ export class WaterFilter {
         filterRemaining = state?.value;
       }
     }
+    // Update the Brightness characteristic of the pseudo filter service to show the filter life level as a percentage
+      const filterLevel = this.accessory.getService("Filter Life Level");
+      filterLevel?.getCharacteristic(this.platform.Characteristic.Brightness).updateValue(filterRemaining);
     return filterRemaining;
   }
 
