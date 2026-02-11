@@ -1,0 +1,194 @@
+
+SmartHQ Discovered device: Refrigerator Model: PVD28BYNIFS
+
+(The 'state' of each service can be queried using getServiceState() in smartHQApi.js)
+
+ServiceDeviceType = cloud.smarthq.device.appliance
+ServiceType       = cloud.smarthq.service.toggle
+Domain            = cloud.smarthq.domain.controls.lock
+Valid Commands    = ["cloud.smarthq.command.toggle.set"]
+Config            = {}
+State             = {"on":false}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.appliance
+ServiceType       = cloud.smarthq.service.toggle
+Domain            = cloud.smarthq.domain.sabbath
+Valid Commands    = ["cloud.smarthq.command.toggle.set"]
+Config            = {}
+State             = {"on":false}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.appliance
+ServiceType       = cloud.smarthq.service.firmware.v1
+Domain            = cloud.smarthq.domain.firmware
+Valid Commands    = ["cloud.smarthq.command.firmware.v1.upgrade"]
+Config            = {"model":"PVD28BYNIFS"}
+State             = {"upgradeStatus":"cloud.smarthq.type.upgrade.idle","versionCurrent":"0.0.0.0","disabled":true}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.icemaker.1
+ServiceType       = cloud.smarthq.service.toggle
+Domain            = cloud.smarthq.domain.full
+Valid Commands    = []
+Config            = {}
+State             = {"on":true}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.icemaker.1
+ServiceType       = cloud.smarthq.service.string
+Domain            = cloud.smarthq.domain.location
+Valid Commands    = []
+Config            = {}
+State             = {"stringValue":"Fresh Food"}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.icemaker.1
+ServiceType       = cloud.smarthq.service.toggle
+Domain            = cloud.smarthq.domain.power
+Valid Commands    = ["cloud.smarthq.command.toggle.set"]
+Config            = {}
+State             = {"on":true}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.meter
+ServiceType       = cloud.smarthq.service.meter
+Domain            = cloud.smarthq.domain.energy
+Valid Commands    = []
+Config            = {"reading":"cloud.smarthq.type.reading.estimated","supportResourceManagement":true,"meterUnits":"cloud.smarthq.type.meterunits.kwh","measurement":"cloud.smarthq.type.measurement.cumulative"}
+State             = {"meterValueDelta":17,"meterValue":65488}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator
+ServiceType       = cloud.smarthq.service.mode
+Domain            = cloud.smarthq.domain.demandresponse
+Valid Commands    = ["cloud.smarthq.command.mode.set"]
+Config            = {"ordered":false,"supportedModes":["cloud.smarthq.type.mode.off","cloud.smarthq.type.mode.on","cloud.smarthq.type.mode.temporary","cloud.smarthq.type.mode.inapplianceloadreduction","cloud.smarthq.type.mode.intemporaryloadincrease","cloud.smarthq.type.mode.intemperatureoffset"]}
+State             = {"mode":"cloud.smarthq.type.mode.off"}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator
+ServiceType       = cloud.smarthq.service.mode
+Domain            = cloud.smarthq.domain.temperatureunits
+Valid Commands    = ["cloud.smarthq.command.mode.set"]
+Config            = {"ordered":false,"supportedModes":["cloud.smarthq.type.mode.fahrenheit","cloud.smarthq.type.mode.celsius"]}
+State             = {"mode":"cloud.smarthq.type.mode.fahrenheit"}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator
+ServiceType       = cloud.smarthq.service.door
+Domain            = cloud.smarthq.domain.door
+Valid Commands    = []
+Config            = {}
+State             = {"topRightDoorInDoorOpen":false,"bottomOpen":false,"topRightOpen":false,"middleOpen":false,"topLeftOpen":false}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator
+ServiceType       = cloud.smarthq.service.integer
+Domain            = cloud.smarthq.domain.brightness.light
+Valid Commands    = ["cloud.smarthq.command.integer.set"]
+Config            = {"integerUnits":"cloud.smarthq.type.integerunits.percentage","maximum":100,"label":"Refrigerator Light Wall","minimum":0}
+State             = {"value":100}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.convertibledrawer
+ServiceType       = cloud.smarthq.service.mode
+Domain            = cloud.smarthq.domain.mode.selection
+Valid Commands    = ["cloud.smarthq.command.mode.set"]
+Config            = {"ordered":false,"supportedModes":["cloud.smarthq.type.mode.convertibledrawer.mode3","cloud.smarthq.type.mode.convertibledrawer.mode4","cloud.smarthq.type.mode.convertibledrawer.mode5","cloud.smarthq.type.mode.convertibledrawer.mode6"]}
+State             = {"mode":"cloud.smarthq.type.mode.convertibledrawer.mode5"}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.convertibledrawer.mode3
+ServiceType       = cloud.smarthq.service.temperature
+Domain            = cloud.smarthq.domain.setpoint
+Valid Commands    = ["cloud.smarthq.command.temperature.set"]
+Config            = {"fahrenheitMinimum":29,"fahrenheitDefault":29,"fahrenheitMaximum":29,"celsiusDefaultConverted":-1.6666666666666667,"celsiusMaximumConverted":-1.6666666666666667,"label":"Meat","celsiusMinimumConverted":-1.6666666666666667}
+State             = {}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.convertibledrawer.mode4
+ServiceType       = cloud.smarthq.service.temperature
+Domain            = cloud.smarthq.domain.setpoint
+Valid Commands    = ["cloud.smarthq.command.temperature.set"]
+Config            = {"fahrenheitMinimum":33,"fahrenheitDefault":33,"fahrenheitMaximum":33,"celsiusDefaultConverted":0.5555555555555556,"celsiusMaximumConverted":0.5555555555555556,"label":"Beverages","celsiusMinimumConverted":0.5555555555555556}
+State             = {}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.convertibledrawer.mode5
+ServiceType       = cloud.smarthq.service.temperature
+Domain            = cloud.smarthq.domain.setpoint
+Valid Commands    = ["cloud.smarthq.command.temperature.set"]
+Config            = {"fahrenheitMinimum":37,"fahrenheitDefault":37,"fahrenheitMaximum":37,"celsiusDefaultConverted":2.7777777777777777,"celsiusMaximumConverted":2.7777777777777777,"label":"Snacks","celsiusMinimumConverted":2.7777777777777777}
+State             = {"celsiusConverted":2.7777777777777777,"fahrenheit":37}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.convertibledrawer.mode6
+ServiceType       = cloud.smarthq.service.temperature
+Domain            = cloud.smarthq.domain.setpoint
+Valid Commands    = ["cloud.smarthq.command.temperature.set"]
+Config            = {"fahrenheitMinimum":42,"fahrenheitDefault":42,"fahrenheitMaximum":42,"celsiusDefaultConverted":5.555555555555555,"celsiusMaximumConverted":5.555555555555555,"label":"Wine","celsiusMinimumConverted":5.555555555555555}
+State             = {}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.defrostdelay
+ServiceType       = cloud.smarthq.service.delaywindow
+Domain            = cloud.smarthq.domain.demandresponse
+Valid Commands    = ["cloud.smarthq.command.delaywindow.set"]
+Config            = {}
+State             = {"startTime":"6","endTime":"10"}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.dispenser.light
+ServiceType       = cloud.smarthq.service.toggle
+Domain            = cloud.smarthq.domain.activate.motion
+Valid Commands    = ["cloud.smarthq.command.toggle.set"]
+Config            = {}
+State             = {"on":true}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.freezer
+ServiceType       = cloud.smarthq.service.toggle
+Domain            = cloud.smarthq.domain.turbo
+Valid Commands    = ["cloud.smarthq.command.toggle.set"]
+Config            = {}
+State             = {"on":false}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.freezer
+ServiceType       = cloud.smarthq.service.temperature
+Domain            = cloud.smarthq.domain.setpoint
+Valid Commands    = ["cloud.smarthq.command.temperature.set"]
+Config            = {"fahrenheitMinimum":-6,"fahrenheitDefault":0,"fahrenheitMaximum":5,"celsiusDefaultConverted":-17.77777777777778,"celsiusMaximumConverted":-15,"celsiusMinimumConverted":-21.11111111111111}
+State             = {"celsiusConverted":-17.77777777777778,"fahrenheit":0}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.freshfood
+ServiceType       = cloud.smarthq.service.temperature
+Domain            = cloud.smarthq.domain.setpoint
+Valid Commands    = ["cloud.smarthq.command.temperature.set"]
+Config            = {"fahrenheitMinimum":34,"fahrenheitDefault":37,"fahrenheitMaximum":42,"celsiusDefaultConverted":2.7777777777777777,"celsiusMaximumConverted":5.555555555555555,"celsiusMinimumConverted":1.1111111111111112}
+State             = {"celsiusConverted":2.7777777777777777,"fahrenheit":37}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.refrigerator.freshfood
+ServiceType       = cloud.smarthq.service.toggle
+Domain            = cloud.smarthq.domain.turbo
+Valid Commands    = ["cloud.smarthq.command.toggle.set"]
+Config            = {}
+State             = {"on":false}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.waterfilter
+ServiceType       = cloud.smarthq.service.string
+Domain            = cloud.smarthq.domain.model
+Valid Commands    = []
+Config            = {}
+State             = {"stringValue":"XWFE"}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.waterfilter
+ServiceType       = cloud.smarthq.service.integer
+Domain            = cloud.smarthq.domain.percent.usage.remaining
+Valid Commands    = []
+Config            = {"integerUnits":"cloud.smarthq.type.integerunits.percentage","maximum":100,"minimum":0}
+State             = {"value":71}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.waterfilter
+ServiceType       = cloud.smarthq.service.mode
+Domain            = cloud.smarthq.domain.state
+Valid Commands    = []
+Config            = {"ordered":false,"supportedModes":["cloud.smarthq.type.mode.good","cloud.smarthq.type.mode.bypass","cloud.smarthq.type.mode.leak","cloud.smarthq.type.mode.expiringsoon","cloud.smarthq.type.mode.expired","cloud.smarthq.type.mode.error"]}
+State             = {"mode":"cloud.smarthq.type.mode.good"}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.wifi
+ServiceType       = cloud.smarthq.service.firmware.v1
+Domain            = cloud.smarthq.domain.firmware
+Valid Commands    = ["cloud.smarthq.command.firmware.v1.upgrade"]
+Config            = {}
+State             = {"upgradeStatus":"cloud.smarthq.type.upgrade.idle","versionCurrent":"0.005.15.162","disabled":true}
+------------------------------------------------------------------------
+ServiceDeviceType = cloud.smarthq.device.wifi
+ServiceType       = cloud.smarthq.service.integer
+Domain            = cloud.smarthq.domain.rssi
+Valid Commands    = []
+Config            = {"integerUnits":"cloud.smarthq.type.integerunits.dbm"}
+State             = {"value":-55}
+------------------------------------------------------------------------
