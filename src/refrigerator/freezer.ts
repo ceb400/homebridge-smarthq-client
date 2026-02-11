@@ -188,11 +188,11 @@ export class Freezer {
    * Handle requests to set the "Target Heating Cooling State" characteristic
    */
   //=====================================================================================
-  setTargetHeatingCoolingState(value: CharacteristicValue) {
+  setTargetHeatingCoolingState() {
     // Nothing to do since refrigerator can only be in COOL mode
   
     const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
-    this.platform.debug('blue', 'setTargetHeatingCoolingState value: ' + value + ', returning: ' + currentValue);
+    this.platform.debug('blue', 'setTargetHeatingCoolingState called, returning: ' + currentValue);
     
     return currentValue;
   }

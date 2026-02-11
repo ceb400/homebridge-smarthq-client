@@ -199,9 +199,9 @@ export class Refrigerator {
    * Handle requests to set the "Target Heating Cooling State" characteristic
    */
   //=====================================================================================
-  setTargetHeatingCoolingState(value: CharacteristicValue) {
+  setTargetHeatingCoolingState() {
     // Nothing to do since refrigerator can only be in COOL mode
-    this.platform.debug('green', 'setTargetHeatingCoolingState called with value: ' + value);
+    this.platform.debug('green', 'setTargetHeatingCoolingState called');
     const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
 
     return currentValue;
