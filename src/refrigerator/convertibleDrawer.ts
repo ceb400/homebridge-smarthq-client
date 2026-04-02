@@ -1,7 +1,6 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -9,7 +8,10 @@ import { DevService } from '../smarthq-types.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class ConvertibleDrawer {
-  private readonly smartHqApi: SmartHqApi;
+  private client: SmartHQClient;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+  private readonly api: API;
 
   //-------------------  Convertible Drawer Temperature Service -----------------------
   private convertibleDrawerMode = {
@@ -19,41 +21,51 @@ export class ConvertibleDrawer {
     WINE: "cloud.smarthq.type.mode.convertibledrawer.mode6",
 };
 
-  private log : Logging;
-
   constructor(
-    private readonly platform: SmartHqPlatform,
-    private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
-    ) {
-    this.platform = platform;
-    this.accessory = accessory;
-    this.deviceServices = deviceServices;
-    this.deviceId = deviceId;
-    this.log = platform.log;
-
-    this.smartHqApi = new SmartHqApi(this.platform); 
+      private readonly platform: SmartHqPlatform,
+      private readonly accessory: PlatformAccessory,
+      public readonly deviceServices: DeviceService[],
+      public readonly deviceId: string,
+      ) {
+  
+      this.api = platform.api; 
+      this.Service = this.api.hap.Service;
+      this.Characteristic = this.api.hap.Characteristic;
+      this.accessory = accessory;
+      this.deviceServices = deviceServices;
+      this.deviceId = deviceId;
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
 
     //=====================================================================================
     // Check to see if the device has any supported Convertible Drawer services
     // If not, then don't add services for device that doesn't support it
     //=====================================================================================
 
-    if (!this.platform.deviceSupportsThisService(this.deviceServices, 
-          'cloud.smarthq.device.refrigerator.convertibledrawer',
-          'cloud.smarthq.service.mode',
-          'cloud.smarthq.domain.mode.selection')) {
-      this.log.info('No supported Convertible Drawer services found for device: ' + this.accessory.displayName);
+    let hasConvertibleDrawer = false;
+    for (const service of deviceServices) {
+      if (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.convertibledrawer'
+          && service.serviceType      === 'cloud.smarthq.service.mode'
+          && service.domainType       === 'cloud.smarthq.domain.mode.selection') {
+        hasConvertibleDrawer = true;
+      }
+    }
+  
+    if (!hasConvertibleDrawer) {
+      this.client.debug('No supported Convertible Drawer service found for device: ' + this.accessory.displayName);
       return;
     }
-    this.platform.debug('green', 'Adding Convertible Drawer Switches');
+    this.client.debug('Adding Convertible Drawer Switches');
     
     // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer,  'GE')
-      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.model || 'Default-Model')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
+    this.accessory.getService(this.Service.AccessoryInformation)!
+      .setCharacteristic(this.Characteristic.Manufacturer,  'GE')
+      .setCharacteristic(this.Characteristic.Model, accessory.context.device.model || 'Default-Model')
+      .setCharacteristic(this.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
 
      
     //=====================================================================================
@@ -63,47 +75,47 @@ export class ConvertibleDrawer {
     let displayName = "Drawer Meat";
 
     const convertibleDrawerMeat = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'drawer-mode-3');
-    convertibleDrawerMeat.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    convertibleDrawerMeat.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    convertibleDrawerMeat.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-3');
+    convertibleDrawerMeat.setCharacteristic(this.Characteristic.Name, displayName);
+    convertibleDrawerMeat.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    convertibleDrawerMeat.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
     displayName = "Drawer Beverages";
 
     const convertibleDrawerBeverages = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'drawer-mode-4');
-    convertibleDrawerBeverages.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    convertibleDrawerBeverages.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    convertibleDrawerBeverages.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-4');
+    convertibleDrawerBeverages.setCharacteristic(this.Characteristic.Name, displayName);
+    convertibleDrawerBeverages.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    convertibleDrawerBeverages.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
     displayName = "Drawer Snacks";
 
     const convertibleDrawerSnacks = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'drawer-mode-5');
-    convertibleDrawerSnacks.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    convertibleDrawerSnacks.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    convertibleDrawerSnacks.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-5');
+    convertibleDrawerSnacks.setCharacteristic(this.Characteristic.Name, displayName);
+    convertibleDrawerSnacks.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    convertibleDrawerSnacks.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
     displayName = "Drawer Wine";
     const convertibleDrawerWine = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'drawer-mode-6');
-    convertibleDrawerWine.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    convertibleDrawerWine.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    convertibleDrawerWine.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-6');
+    convertibleDrawerWine.setCharacteristic(this.Characteristic.Name, displayName);
+    convertibleDrawerWine.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    convertibleDrawerWine.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
     // create handlers for required characteristics
-    convertibleDrawerSnacks.getCharacteristic(this.platform.Characteristic.On)
+    convertibleDrawerSnacks.getCharacteristic(this.Characteristic.On)
       .onGet(this.getConvertibleDrawerSnacks.bind(this))
       .onSet(this.setConvertibleDrawerSnacks.bind(this));
 
-    convertibleDrawerMeat.getCharacteristic(this.platform.Characteristic.On)
+    convertibleDrawerMeat.getCharacteristic(this.Characteristic.On)
       .onGet(this.getConvertibleDrawerMeat.bind(this))
       .onSet(this.setConvertibleDrawerMeat.bind(this));
 
-    convertibleDrawerBeverages.getCharacteristic(this.platform.Characteristic.On)
+    convertibleDrawerBeverages.getCharacteristic(this.Characteristic.On)
       .onGet(this.getConvertibleDrawerBeverages.bind(this))
       .onSet(this.setConvertibleDrawerBeverages.bind(this));
 
-    convertibleDrawerWine.getCharacteristic(this.platform.Characteristic.On)
+    convertibleDrawerWine.getCharacteristic(this.Characteristic.On)
       .onGet(this.getConvertibleDrawerWine.bind(this))
       .onSet(this.setConvertibleDrawerWine.bind(this));
 
@@ -111,12 +123,12 @@ export class ConvertibleDrawer {
     
     displayName = "Drawer Temp";  
     const drawerTemperature = this.accessory.getService(displayName) 
-      || this.accessory.addService(this.platform.Service.TemperatureSensor, displayName, 'drawer-temp-1');
-    drawerTemperature.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    drawerTemperature.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    drawerTemperature.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+      || this.accessory.addService(this.Service.TemperatureSensor, displayName, 'drawer-temp-1');
+    drawerTemperature.setCharacteristic(this.Characteristic.Name, displayName);
+    drawerTemperature.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    drawerTemperature.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
-    drawerTemperature.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
+    drawerTemperature.getCharacteristic(this.Characteristic.CurrentTemperature)
       .onGet(this.getDrawerTemperature.bind(this));
     
   }
@@ -124,38 +136,44 @@ export class ConvertibleDrawer {
   //=====================================================================================
   async getDrawerTemperature(): Promise<CharacteristicValue> {
     let temp = 0;
-    let mode = '0';
+    let mode = '';
 
     // First you need to find which mode is set for the Convertible Drawer
 
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.convertibledrawer' 
         && service.serviceType       === 'cloud.smarthq.service.mode') {
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response == null || !response?.state?.mode) {
+            this.client.debug('No mode returned from getDrawerTemperature state');
+            break;     // an invalid mode value will be used below so no match will be found
+          }
+          mode = String(response?.state?.mode).split('.').pop() ?? ''; 
+          break;
 
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state == null || !state?.mode) {
-          this.platform.debug('blue', 'No mode returned from getDrawerTemperature state');
-          break;     // an invalid mode value will be used below so no match will be found
+        } catch (error) {
+          this.client.debug('Error getting drawer temperature mode: ' + error);
         }
-        const result = state?.mode.lastIndexOf(".");
-        mode = state?.mode.slice(result + 1); 
-        break;
       } 
     }
-
     // Add the 'mode' to serviceDeviceType to get the correct temperature service
 
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === `cloud.smarthq.device.refrigerator.convertibledrawer.${mode}` 
         && service.serviceType       === 'cloud.smarthq.service.temperature') {
-
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state == null || !state?.celsiusConverted) {
-          this.platform.debug('blue', 'No celsiusConverted returned from getDrawerTemperature state');
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response == null || !response?.state?.celsiusConverted) {
+            this.client.debug('No celsiusConverted returned from getDrawerTemperature state');
+            return false;
+          }
+          temp = Number(response?.state?.celsiusConverted);
+          break;
+        } catch (error) {
+          this.client.debug('Error getting drawer temperature: ' + error);
           return false;
         }
-        temp = state?.celsiusConverted;
-        break;
       } 
     }
     return temp;
@@ -170,17 +188,19 @@ export class ConvertibleDrawer {
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.convertibledrawer' 
         && service.serviceType       === 'cloud.smarthq.service.mode') {
-
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state == null || !state?.mode) {
-          this.platform.debug('blue', 'No mode returned from getConvertibleDrawerSnacks state');
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response == null || !response?.state?.mode) {
+            this.client.debug('No mode returned from getConvertibleDrawerSnacks state');
+            return false;
+          }
+          
+          isOn = response?.state?.mode === snacks;
+          break;
+        } catch (error) {
+          this.client.debug('Error getting Convertible Drawer Snacks state: ' + error);
           return false;
         }
-        
-        if (state?.mode === snacks) {
-          isOn = true;
-        }
-        break;
       } 
     }
     return isOn;
@@ -196,16 +216,19 @@ export class ConvertibleDrawer {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.convertibledrawer' 
         && service.serviceType       === 'cloud.smarthq.service.mode') {
 
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state == null || !state?.mode) {
-          this.platform.debug('blue', 'No mode returned from getConvertibleDrawerMeat state');
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response == null || !response?.state?.mode) {
+            this.client.debug('No mode returned from getConvertibleDrawerMeat state');
+            return false;
+          }
+          
+          isOn = response?.state?.mode === meat;
+          break;
+        } catch (error) {
+          this.client.debug('Error getting Convertible Drawer Meat state: ' + error);
           return false;
         }
-        
-        if (state?.mode === meat) {
-          isOn = true;
-        }
-        break;
       } 
     }
     return isOn;
@@ -220,17 +243,19 @@ export class ConvertibleDrawer {
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.convertibledrawer' 
         && service.serviceType       === 'cloud.smarthq.service.mode') {
-
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state == null || !state?.mode) {
-          this.platform.debug('blue', 'No mode returned from getConvertibleDrawerBeverages state');
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response == null || !response?.state?.mode) {
+            this.client.debug('No mode returned from getConvertibleDrawerBeverages state');
+            return false;
+          }
+          
+          isOn = response?.state?.mode === beverages;
+          break;
+        } catch (error) {
+          this.client.debug('Error getting Convertible Drawer Beverages state: ' + error);
           return false;
         }
-        
-        if (state.mode === beverages) {
-          isOn = true;
-        }
-        break;
       } 
     }
     return isOn;
@@ -245,17 +270,19 @@ export class ConvertibleDrawer {
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.convertibledrawer' 
         && service.serviceType       === 'cloud.smarthq.service.mode') {
-
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state == null || !state?.mode) {
-          this.platform.debug('blue', 'No mode returned from getConvertibleDrawerWine state');
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response == null || !response?.state?.mode) {
+            this.client.debug('No mode returned from getConvertibleDrawerWine state');
+            return false;
+          }
+          
+          isOn = response?.state?.mode === wine;
+          break;
+        } catch (error) {
+          this.client.debug('Error getting Convertible Drawer Wine state: ' + error);
           return false;
         }
-        
-        if (state.mode === wine) {
-          isOn = true;
-        }
-        break;
       } 
     }
     return isOn;
@@ -263,7 +290,6 @@ export class ConvertibleDrawer {
 
 //=====================================================================================
   async setConvertibleDrawerMeat(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setConvertibleDrawerMeat");
     if (value === true) {
       const cmdBody = {
         command: {
@@ -277,103 +303,119 @@ export class ConvertibleDrawer {
         domainType:        'cloud.smarthq.domain.mode.selection'
       };
 
-      const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+      try {
+        const response = await this.client.sendCommand(cmdBody);
 
-      if (response != null) {
-        // Update the switches for Wine, Snacks, Beverages to off
-        const switchSnacks = this.accessory.getService("Drawer Snacks");
-        switchSnacks?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-        const switchBeverages = this.accessory.getService("Drawer Beverages");
-        switchBeverages?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-        const switchWine = this.accessory.getService("Drawer Wine");
-        switchWine?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
+        if (response != null) {
+          // Update the switches for Wine, Snacks, Beverages to off
+          const switchSnacks = this.accessory.getService("Drawer Snacks");
+          switchSnacks?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchBeverages = this.accessory.getService("Drawer Beverages");
+          switchBeverages?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchWine = this.accessory.getService("Drawer Wine"); 
+          switchWine?.getCharacteristic(this.Characteristic.On).updateValue(false);
+        }
+      } catch (error) {
+        this.client.debug('Error sending setConvertibleDrawerMeat command: ' + error);
       }
     }
   }
 
 //=====================================================================================
   async setConvertibleDrawerBeverages(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setConvertibleDrawerBeverages value: " + value);
-    
-    const cmdBody = {
-      command: {
-        commandType: 'cloud.smarthq.command.mode.set',
-        mode: this.convertibleDrawerMode.BEVERAGES
-      },
-      kind:              'service#command',
-      deviceId:           this.deviceId,
-      serviceDeviceType: 'cloud.smarthq.device.refrigerator.convertibledrawer',
-      serviceType:       'cloud.smarthq.service.mode',
-      domainType:        'cloud.smarthq.domain.mode.selection'
-    };
+    if (value === true) {
+      const cmdBody = {
+        command: {
+          commandType: 'cloud.smarthq.command.mode.set',
+          mode: this.convertibleDrawerMode.BEVERAGES
+        },
+        kind:              'service#command',
+        deviceId:           this.deviceId,
+        serviceDeviceType: 'cloud.smarthq.device.refrigerator.convertibledrawer',
+        serviceType:       'cloud.smarthq.service.mode',
+        domainType:        'cloud.smarthq.domain.mode.selection'
+      };
 
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+      try {
+        const response = await this.client.sendCommand(cmdBody);
 
-    if (response != null) {
-      // Update the switches for Wine, Snacks, Meat to off
-      const switchSnacks = this.accessory.getService("Drawer Snacks");
-      switchSnacks?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-      const switchWine = this.accessory.getService("Drawer Wine");
-      switchWine?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-      const switchMeat = this.accessory.getService("Drawer Meat");
-      switchMeat?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
+        if (response != null) {
+          // Update the switches for Wine, Snacks, Meat to off
+          const switchSnacks = this.accessory.getService("Drawer Snacks");
+          switchSnacks?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchWine = this.accessory.getService("Drawer Wine");
+          switchWine?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchMeat = this.accessory.getService("Drawer Meat");
+          switchMeat?.getCharacteristic(this.Characteristic.On).updateValue(false);
+        }
+      } catch (error) {
+        this.client.debug('Error sending setConvertibleDrawerBeverages command: ' + error);
+      }
     }
   }
 
 //=====================================================================================
   async setConvertibleDrawerSnacks(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setConvertibleDrawerSnacks value: " + value);
+    if (value === true) {
+      const cmdBody = {
+        command: {
+          commandType: 'cloud.smarthq.command.mode.set',
+          mode:         this.convertibleDrawerMode.SNACKS
+        },
+        kind:              'service#command',
+        deviceId:           this.deviceId,
+        serviceDeviceType: 'cloud.smarthq.device.refrigerator.convertibledrawer',
+        serviceType:       'cloud.smarthq.service.mode',
+        domainType:        'cloud.smarthq.domain.mode.selection'
+      };
 
-    const cmdBody = {
-      command: {
-        commandType: 'cloud.smarthq.command.mode.set',
-        mode:         this.convertibleDrawerMode.SNACKS
-      },
-      kind:              'service#command',
-      deviceId:           this.deviceId,
-      serviceDeviceType: 'cloud.smarthq.device.refrigerator.convertibledrawer',
-      serviceType:       'cloud.smarthq.service.mode',
-      domainType:        'cloud.smarthq.domain.mode.selection'
-    };
+      try {
+        const response = await this.client.sendCommand(cmdBody);
 
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
-
-    if (response != null) {
-      // Update the switches for Wine, Meat, Beverages to off
-      const switchMeat = this.accessory.getService("Drawer Meat");
-      switchMeat?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-      const switchBeverages = this.accessory.getService("Drawer Beverages");
-      switchBeverages?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-      const switchWine = this.accessory.getService("Drawer Wine");
-      switchWine?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
+        if (response != null) {
+          // Update the switches for Wine, Meat, Beverages to off
+          const switchMeat = this.accessory.getService("Drawer Meat");
+          switchMeat?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchBeverages = this.accessory.getService("Drawer Beverages");
+          switchBeverages?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchWine = this.accessory.getService("Drawer Wine");
+          switchWine?.getCharacteristic(this.Characteristic.On).updateValue(false);
+        }
+      } catch (error) {
+        this.client.debug('Error sending setConvertibleDrawerSnacks command: ' + error);
+      }
     }
   }
   //=====================================================================================
   async setConvertibleDrawerWine(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setConvertibleDrawerWine value: " + value);
-   
-    const cmdBody = {
-      command: {
-        commandType: 'cloud.smarthq.command.mode.set',
-        mode:         this.convertibleDrawerMode.WINE
-      },
-      kind:              'service#command',
-      deviceId:           this.deviceId,
-      serviceDeviceType: 'cloud.smarthq.device.refrigerator.convertibledrawer',
-      serviceType:       'cloud.smarthq.service.mode',
-      domainType:        'cloud.smarthq.domain.mode.selection'
-    };
+    if (value === true) {
+      const cmdBody = {
+        command: {
+          commandType: 'cloud.smarthq.command.mode.set',
+          mode:         this.convertibleDrawerMode.WINE
+        },
+        kind:              'service#command',
+        deviceId:           this.deviceId,
+        serviceDeviceType: 'cloud.smarthq.device.refrigerator.convertibledrawer',
+        serviceType:       'cloud.smarthq.service.mode',
+        domainType:        'cloud.smarthq.domain.mode.selection'
+      };
 
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+      try {
+        const response = await this.client.sendCommand(cmdBody);
 
-    if (response != null) {
-    // Update the switches for Meat, Snacks, Beverages to off
-      const switchSnacks = this.accessory.getService("Drawer Snacks");
-      switchSnacks?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-      const switchBeverages = this.accessory.getService("Drawer Beverages");
-      switchBeverages?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
-      const switchMeat = this.accessory.getService("Drawer Meat");
-      switchMeat?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
+        if (response != null) {
+        // Update the switches for Meat, Snacks, Beverages to off
+          const switchSnacks = this.accessory.getService("Drawer Snacks");
+          switchSnacks?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchBeverages = this.accessory.getService("Drawer Beverages");
+          switchBeverages?.getCharacteristic(this.Characteristic.On).updateValue(false);
+          const switchMeat = this.accessory.getService("Drawer Meat");
+          switchMeat?.getCharacteristic(this.Characteristic.On).updateValue(false);
+        }
+      } catch (error) {
+        this.client.debug('Error sending setConvertibleDrawerWine command: ' + error);
+      }
     }
   }
 }

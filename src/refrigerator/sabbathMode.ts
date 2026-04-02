@@ -1,7 +1,6 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -9,43 +8,55 @@ import { DevService } from '../smarthq-types.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class SabbathMode {
-  static sabbathModeStatus = false;private readonly smartHqApi: SmartHqApi;
-  private log : Logging;
+  private client: SmartHQClient;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+  private readonly api: API;
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
+    public readonly deviceServices: DeviceService[],
+    public readonly deviceId: string,
     ) {
-    this.platform = platform;
+
+    this.api = platform.api; 
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
-    this.log = platform.log;
-
-    this.smartHqApi = new SmartHqApi(this.platform); 
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
 
     //=====================================================================================
     // Check to see if the device has any supported Sabbath Mode services
     // If not, then don't add services for device that doesn't support it
     //=====================================================================================
-
-    if (!this.platform.deviceSupportsThisService(this.deviceServices, 
-          'cloud.smarthq.device.appliance',
-          'cloud.smarthq.service.toggle',
-          'cloud.smarthq.domain.sabbath')) {
-      this.log.info('No supported Sabbath Mode service found for device: ' + this.accessory.displayName);
+    let hasSabbathMode = false;
+    for (const service of deviceServices) {
+      if (service.serviceDeviceType === 'cloud.smarthq.device.appliance' 
+        && service.serviceType      === 'cloud.smarthq.service.toggle'
+        && service.domainType       === 'cloud.smarthq.domain.sabbath') {
+        hasSabbathMode = true;
+      }
+    }
+    if (!hasSabbathMode) {
+      console.log('[SmartHq] No supported Sabbath Mode service found for device: ' + this.accessory.displayName);
       return;
     }
-    this.platform.debug('green', 'Adding Sabbath Mode Switch');
+    this.client.debug('Adding Sabbath Mode Switch');
 
     // set accessory information
 
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer,  'GE')
-      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.model || 'Default-Model')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
+    this.accessory.getService(this.Service.AccessoryInformation)!
+      .setCharacteristic(this.Characteristic.Manufacturer,  'GE')
+      .setCharacteristic(this.Characteristic.Model, accessory.context.device.model || 'Default-Model')
+      .setCharacteristic(this.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
 
     //=====================================================================================
     // create a sabbath mode switch for the Refrigerator 
@@ -53,59 +64,68 @@ export class SabbathMode {
     const displayName = "Sabbath Mode"; 
 
     const sabbathMode = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'sabbathmode123');
-    sabbathMode.setCharacteristic(this.platform.Characteristic.Name, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName, 'sabbathmode123');
+    sabbathMode.setCharacteristic(this.Characteristic.Name, displayName);
 
-    sabbathMode.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    sabbathMode.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    sabbathMode.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    sabbathMode.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
     
-    sabbathMode.getCharacteristic(this.platform.Characteristic.On)
+    sabbathMode.getCharacteristic(this.Characteristic.On)
       .onGet(this.getSabbathMode.bind(this))
       .onSet(this.setSabbathMode.bind(this));
 }
 
   //=====================================================================================
   async getSabbathMode(): Promise<CharacteristicValue> {
+    let isOn = false;
 
     for (const service of this.deviceServices) {
       if (service.serviceDeviceType === 'cloud.smarthq.device.appliance' 
         && service.serviceType      === 'cloud.smarthq.service.toggle'
         && service.domainType       === 'cloud.smarthq.domain.sabbath') {
 
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.on == null) {
-          this.platform.debug('blue', 'No state.on returned from getSabbathMode state');
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response?.state?.on == null) {
+            this.client.debug('No state.on returned from getSabbathMode state');
+            return false;
+          }
+          isOn = response?.state?.on === true;
+          break;
+        } catch (error) {
+          this.client.debug('Error getting Sabbath Mode state: ' + error);
           return false;
         }
-        SabbathMode.sabbathModeStatus = state?.on;
-        break
       }
     }
-    return SabbathMode.sabbathModeStatus;
+    return isOn;
   }
 
   //=====================================================================================
-  async setSabbathMode(value: CharacteristicValue) {
+    async setSabbathMode(value: CharacteristicValue) {
 
-    value = SabbathMode.sabbathModeStatus ? false : true;
+      const cmdBody = {
+        command: {
+          commandType: 'cloud.smarthq.command.toggle.set',
+          on: value
+        },
+        kind:              'service#command',
+        deviceId:           this.deviceId,
+        serviceDeviceType: 'cloud.smarthq.device.appliance',
+        serviceType:       'cloud.smarthq.service.toggle',
+        domainType:        'cloud.smarthq.domain.sabbath'
+      };
 
-    const cmdBody = {
-      command: {
-        commandType: 'cloud.smarthq.command.toggle.set',
-        on: value
-      },
-      kind:              'service#command',
-      deviceId:           this.deviceId,
-      serviceDeviceType: 'cloud.smarthq.device.appliance',
-      serviceType:       'cloud.smarthq.service.toggle',
-      domainType:        'cloud.smarthq.domain.sabbath'
-    };
+    try {
+      const response = await this.client.sendCommand(cmdBody);
 
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
-
-    if (response == null) {
-      this.platform.debug('blue', 'No response from setSabbathMode command');
-      return;
+      if (response == null) {
+        this.client.debug('No response from setSabbathMode command');
+        return;
+      }
+    } catch (error) {
+      this.client.debug('Error sending setSabbathMode command: ' + error);
+      
     }
   }
 }

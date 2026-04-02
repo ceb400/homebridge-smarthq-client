@@ -1,7 +1,6 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -9,32 +8,32 @@ import { DevService } from '../smarthq-types.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class IceMaker {
-
-  private readonly smartHqApi: SmartHqApi;
-  private log : Logging;
+  private client: SmartHQClient;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+  private readonly api: API;
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
+    public readonly deviceServices: DeviceService[],
+    public readonly deviceId: string,
     ) {
-    this.platform = platform;
+
+    this.api = platform.api; 
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
-    this.log = platform.log;
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
 
-    this.smartHqApi = new SmartHqApi(this.platform); 
-
-    if (!this.platform.deviceSupportsThisService(this.deviceServices, 
-          'cloud.smarthq.device.icemaker.1',
-          'cloud.smarthq.service.toggle',
-          'cloud.smarthq.domain.power')) {
-      this.log.info('No supported Ice Maker service found for device: ' + this.accessory.displayName);
-      return;
-    }
-    this.platform.debug('green', 'Adding Ice Maker Switch'); 
+    this.client.debug('Adding Ice Maker Switch'); 
 
     //=====================================================================================
     // create a Ice Maker switch for the Refrigerator 
@@ -42,20 +41,20 @@ export class IceMaker {
     const displayName = "Ice Maker"; 
 
     const iceMaker = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'ice-maker-123');
-    iceMaker.setCharacteristic(this.platform.Characteristic.Name, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName, 'ice-maker-123');
+    iceMaker.setCharacteristic(this.Characteristic.Name, displayName);
 
-    iceMaker.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    iceMaker.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    iceMaker.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    iceMaker.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
     
-    iceMaker.getCharacteristic(this.platform.Characteristic.On)
-      .onGet(this.geticeMaker.bind(this))
-      .onSet(this.seticeMaker.bind(this));
+    iceMaker.getCharacteristic(this.Characteristic.On)
+      .onGet(this.getIceMaker.bind(this))
+      .onSet(this.setIceMaker.bind(this));
 
   }
   
   //=====================================================================================
-  async geticeMaker(): Promise<CharacteristicValue> {
+  async getIceMaker(): Promise<CharacteristicValue> {
 
     let isOn = false;
 
@@ -63,20 +62,24 @@ export class IceMaker {
       if (service.serviceDeviceType === 'cloud.smarthq.device.icemaker.1' 
         && service.serviceType === 'cloud.smarthq.service.toggle'
         && service.domainType === 'cloud.smarthq.domain.power') {
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.on == null) {
-          this.platform.debug('blue', 'No state.On returned from geticeMaker state');
-          return false;
+          try {
+            const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+            if (response?.state?.on == null) {
+              this.client.debug('No state.On returned from geticeMaker state');
+              return false;
+            }
+            isOn = response?.state?.on === true;
+            break;
+        } catch (error) {
+          this.client.debug('Error getting Ice Maker state: ' + error);
         }
-        isOn = state?.on;
       }
     }
     return isOn;
   }
 
   //=====================================================================================
-  async seticeMaker(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered seticeMaker  toggle");
+  async setIceMaker(value: CharacteristicValue) {
    
     const cmdBody = {
       command: {
@@ -90,11 +93,16 @@ export class IceMaker {
       domainType: 'cloud.smarthq.domain.power'
     };
 
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+    try {
+      const response = await this.client.sendCommand(cmdBody);
 
-    if (response == null) {
-      this.platform.debug('blue', 'No response from seticeMaker command');
-      return;
+      if (response == null) {
+        this.client.debug('No response from setIceMaker command');
+        return;
+      }
+    } catch (error) {
+      this.client.debug('Error sending setIceMaker command: ' + error);
     }
+
   }
 }

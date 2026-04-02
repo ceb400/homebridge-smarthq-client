@@ -1,7 +1,6 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
-import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHqPlatform } from '../platform.js'
 
 /**
  * Platform Accessory
@@ -12,60 +11,75 @@ export class Refrigerator {
   // Default temperatures for a GE Profile Refrigerator
   private refrigeratorTargetTemperature = 2.78; // Default 37F in Celsius
 
-  private readonly smartHqApi: SmartHqApi;
-  private log : Logging;
+  private client: SmartHQClient;
+  public  Service: typeof Service;
+  public  Characteristic: typeof Characteristic;
+  private  api: API;
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
+    public readonly deviceServices: DeviceService[],
+    public readonly deviceId: string,
     ) {
-    this.platform = platform;
+
+    this.api = platform.api; 
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
-    this.log = platform.log;
-
-    this.smartHqApi = new SmartHqApi(this.platform);  
-
-    this.platform.debug('green', 'Adding Refrigerator Thermostat');
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
+    
+    this.client.debug('Adding Refrigerator Thermostat');
     
     // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer,  'GE')
-      .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.model || 'Default-Model')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
+    this.accessory.getService(this.Service.AccessoryInformation)!
+      .setCharacteristic(this.Characteristic.Manufacturer,  'GE')
+      .setCharacteristic(this.Characteristic.Model, accessory.context.device.model || 'Default-Model')
+      .setCharacteristic(this.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
+
+    const alerts =  this.client.getDeviceAlerts(deviceId);
+    if (alerts) {
+      this.client.debug('Refrigerator Alerts: ' + JSON.stringify(alerts, null, 2));
+    } else {
+      this.client.debug('No alerts returned from getDeviceAlerts for refrigerator');
+    }
     
     //=====================================================================================
     // create a new Thermostat service for the Refrigerator
     //===================================================================================== 
     const displayName = "Refrigerator";
     const refrigeratorThermostat = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Thermostat, displayName, 'fridge-thermo1');
+    || this.accessory.addService(this.Service.Thermostat, displayName, 'fridge-thermo1');
     // set the service name, this is what is displayed as the default name on the Home app
-    refrigeratorThermostat.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    refrigeratorThermostat.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    refrigeratorThermostat.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    refrigeratorThermostat.setCharacteristic(this.Characteristic.Name, displayName);
+    refrigeratorThermostat.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    refrigeratorThermostat.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
-    const currentHeatCoolCharacteristic = refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState);
-    const targetHeatCoolCharacteristic = refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState);
-    const currentTempCharacteristic = refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
-    const targetTempCharacteristic = refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature);
+    const currentHeatCoolCharacteristic = refrigeratorThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState);
+    const targetHeatCoolCharacteristic = refrigeratorThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState);
+    const currentTempCharacteristic = refrigeratorThermostat.getCharacteristic(this.Characteristic.CurrentTemperature);
+    const targetTempCharacteristic = refrigeratorThermostat.getCharacteristic(this.Characteristic.TargetTemperature);
 
     // Now modify the properties for each characteristic to match the refrigerator capabilities 
     // Only allow COOL mode for refrigerator  
     currentHeatCoolCharacteristic.setProps({  
-      minValue: this.platform.Characteristic.CurrentHeatingCoolingState.OFF,
-      maxValue: this.platform.Characteristic.CurrentHeatingCoolingState.COOL,
-      validValues: [this.platform.Characteristic.CurrentHeatingCoolingState.COOL]
+      minValue: this.Characteristic.CurrentHeatingCoolingState.OFF,
+      maxValue: this.Characteristic.CurrentHeatingCoolingState.COOL,
+      validValues: [this.Characteristic.CurrentHeatingCoolingState.COOL]
     });
 
     // Only allow COOL mode for refrigerator
     targetHeatCoolCharacteristic.setProps({
-      minValue: this.platform.Characteristic.TargetHeatingCoolingState.OFF,
-      maxValue: this.platform.Characteristic.TargetHeatingCoolingState.COOL,
-      validValues: [this.platform.Characteristic.TargetHeatingCoolingState.COOL]
+      minValue: this.Characteristic.TargetHeatingCoolingState.OFF,
+      maxValue: this.Characteristic.TargetHeatingCoolingState.COOL,
+      validValues: [this.Characteristic.TargetHeatingCoolingState.COOL]
     });
 
     try {
@@ -75,7 +89,7 @@ export class Refrigerator {
         minStep: 0.1
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Refrigerator Current Temperature properties: ' + error);
+      this.client.debug('Error setting Refrigerator Current Temperature properties: ' + error);
     }
       
       // Change properties for the characteristic for a GE Profile Refrigerator temperature range is 1.111C (34F) to 5.556C (42F)
@@ -87,25 +101,25 @@ export class Refrigerator {
         minStep: 0.1
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Refrigerator Target Temperature properties: ' + error);
+      this.client.debug('Error setting Refrigerator Target Temperature properties: ' + error);
     }
 
     // create handlers for required characteristics
-    refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState)
+    refrigeratorThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState)
       .onGet(this.getCurrentHeatingCoolingState.bind(this));
     // Only allow COOL mode for refrigerator
-    refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
+    refrigeratorThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState)
       .onGet(this.setTargetHeatingCoolingState.bind(this))
       .onSet(this.setTargetHeatingCoolingState.bind(this));
 
-    refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
+    refrigeratorThermostat.getCharacteristic(this.Characteristic.CurrentTemperature)
       .onGet(this.getFridgeTemperature.bind(this));
 
-    refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature)
+    refrigeratorThermostat.getCharacteristic(this.Characteristic.TargetTemperature)
       .onGet(this.getFridgeTemperature.bind(this))
       .onSet(this.setFridgeTemperature.bind(this));
 
-    refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.TemperatureDisplayUnits)
+    refrigeratorThermostat.getCharacteristic(this.Characteristic.TemperatureDisplayUnits)
       .onGet(this.handleTemperatureDisplayUnitsGet.bind(this))
       .onSet(this.handleTemperatureDisplayUnitsSet.bind(this));
 
@@ -116,44 +130,42 @@ export class Refrigerator {
   setInterval(() => {
     // push the new value to HomeKit
     this.getFridgeTemperature().then(temp => {
-      refrigeratorThermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).updateValue(temp);
+      refrigeratorThermostat.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(temp);
     });
-  }, 5000);
+  }, 30000);
   
 }
 
   //=====================================================================================
   // Refrigerator Temperature Handlers using SmartHQ API commands in smartHqApi.ts
   //=====================================================================================
-  async getFridgeTemperature(): Promise<CharacteristicValue> {
+  async getFridgeTemperature(): Promise<number> {
     let temp = 0;
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.freshfood' 
         && service.serviceType       === 'cloud.smarthq.service.temperature') {
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response?.state?.celsiusConverted == null) {
+            this.client.debug('No state.celsiusConverted returned from getFridgeTemperature state');
+            temp = 2.78;  // Return 2.78C (37F) if no data
 
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.celsiusConverted == null) {
-          this.platform.debug('blue', 'No state.celsiusConverted returned from getFridgeTemperature state');
-          return 2.78;  // Return 2.78C (37F) if no data
-        }
-        temp = state?.celsiusConverted;
-        break;
-      } 
+            return temp;
+          }
+          temp = Number(response.state.celsiusConverted);
+          break; 
+        }  catch (error) {
+          this.client.debug('Error getting Refrigerator Temperature: ' + error);
+          return 2.78;  // Return 2.78C (37F) on error
+        } 
+      }
     }
-
-    // if you need to return an error to show the device as "Not Responding" in the Home app:
-    // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-
     return temp;
-
   }
 
   
   //=====================================================================================
   async setFridgeTemperature(value: CharacteristicValue) {
-    if (this.platform.config.debug) {
-      this.log.info("Triggered setTemperature");
-    }
     this.refrigeratorTargetTemperature = value as number;
 
     const cmdBody = {
@@ -167,20 +179,26 @@ export class Refrigerator {
       serviceType:        'cloud.smarthq.service.temperature',
       domainType:         'cloud.smarthq.domain.setpoint'
     };
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
 
-    if (response == null) {
-      this.platform.debug('blue', 'No response from setFridgeTemperature command');
-      return;
-    }
-  };
+    try {
+        const response = await this.client.sendCommand(cmdBody);
+
+        if (response == null) {
+          this.client.debug('No response from setFridgeTemperature command');
+          return;
+        }
+      } catch (error) {
+        this.client.debug('Error sending setFridgeTemperature command: ' + error);
+        return;
+       }
+  }
 
   
   //=====================================================================================
   getCurrentHeatingCoolingState() {
 
     // set this to a valid value for CurrentHeatingCoolingState
-    const currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
+    const currentValue = this.Characteristic.CurrentHeatingCoolingState.COOL;
 
     return currentValue;
   }
@@ -191,7 +209,7 @@ export class Refrigerator {
   setCurrentHeatingCoolingState() {
 
     // set this to a valid value for TargetHeatingCoolingState
-    const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
+    const currentValue = this.Characteristic.TargetHeatingCoolingState.COOL;
 
     return currentValue;
   }
@@ -201,8 +219,7 @@ export class Refrigerator {
   //=====================================================================================
   setTargetHeatingCoolingState() {
     // Nothing to do since refrigerator can only be in COOL mode
-    this.platform.debug('green', 'setTargetHeatingCoolingState called');
-    const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
+    const currentValue = this.Characteristic.TargetHeatingCoolingState.COOL;
 
     return currentValue;
   }
@@ -224,7 +241,7 @@ export class Refrigerator {
   handleTemperatureDisplayUnitsGet() {
 
     // set this to a valid value for TemperatureDisplayUnits
-    const currentValue = this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS;
+    const currentValue = this.Characteristic.TemperatureDisplayUnits.CELSIUS;
 
     return currentValue;
   }
@@ -234,8 +251,8 @@ export class Refrigerator {
    */
   //=====================================================================================
   handleTemperatureDisplayUnitsSet(value: CharacteristicValue) {
-    if (value === this.platform.Characteristic.TemperatureDisplayUnits.FAHRENHEIT) {
-      this.platform.debug('green', 'Temperature Display Units set to FAHRENHEIT');
+    if (value === this.Characteristic.TemperatureDisplayUnits.FAHRENHEIT) {
+      this.client.debug('Temperature Display Units set to FAHRENHEIT');
     }
   }
 }

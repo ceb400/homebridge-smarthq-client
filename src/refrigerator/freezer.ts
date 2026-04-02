@@ -1,7 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
+
 
 /**
  * Platform Accessory
@@ -9,57 +9,64 @@ import { DevService } from '../smarthq-types.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class Freezer {
-
   // Default temperatures for a GE Profile Refrigerator
-  private freezerTargetTemperature = -17.77;    // Default 0F 
-
-  
-  private readonly smartHqApi: SmartHqApi;
-  private log : Logging;
+  private freezerTargetTemperature = -17.77;    // Default 0F
+  private client: SmartHQClient;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+  private readonly api: API;
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
+    public readonly deviceServices: DeviceService[],
+    public readonly deviceId: string,
     ) {
-    this.platform = platform;
+
+    this.api = platform.api; 
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
-    this.log = platform.log;
+    this.platform = platform;
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
 
-    this.smartHqApi = new SmartHqApi(this.platform); 
-    this.platform.debug('green', 'Adding Freezer Thermostat');
+    this.client.debug('Adding Freezer Thermostat');
     
     //=====================================================================================
     // create a new Thermostat service for the Freezer
     //===================================================================================== 
     const displayName = "Freezer";
     const freezerThermostat = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Thermostat, displayName, 'freezer-thermo1');
-    freezerThermostat.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    freezerThermostat.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    freezerThermostat.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    || this.accessory.addService(this.Service.Thermostat, displayName, 'freezer-thermo1');
+    freezerThermostat.setCharacteristic(this.Characteristic.Name, displayName);
+    freezerThermostat.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    freezerThermostat.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
-    const currentHeatCoolCharacteristicFreezer = freezerThermostat.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState);
-    const targetHeatCoolCharacteristicFreezer = freezerThermostat.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState);
-    const currentTempCharacteristicFreezer = freezerThermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
-    const targetTempCharacteristicFreezer = freezerThermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature);
+    const currentHeatCoolCharacteristicFreezer = freezerThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState);
+    const targetHeatCoolCharacteristicFreezer = freezerThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState);
+    const currentTempCharacteristicFreezer = freezerThermostat.getCharacteristic(this.Characteristic.CurrentTemperature);
+    const targetTempCharacteristicFreezer = freezerThermostat.getCharacteristic(this.Characteristic.TargetTemperature);
 
     //=====================================================================================
     // Now modify the properties for each characteristic to match the freezer capabilities 
     //=====================================================================================
     currentHeatCoolCharacteristicFreezer.setProps({  
-      minValue: this.platform.Characteristic.CurrentHeatingCoolingState.OFF,
-      maxValue: this.platform.Characteristic.CurrentHeatingCoolingState.COOL,
-      validValues: [this.platform.Characteristic.CurrentHeatingCoolingState.COOL]
+      minValue: this.Characteristic.CurrentHeatingCoolingState.OFF,
+      maxValue: this.Characteristic.CurrentHeatingCoolingState.COOL,
+      validValues: [this.Characteristic.CurrentHeatingCoolingState.COOL]
     });
 
     targetHeatCoolCharacteristicFreezer.setProps({
-      minValue: this.platform.Characteristic.TargetHeatingCoolingState.OFF,
-      maxValue: this.platform.Characteristic.TargetHeatingCoolingState.COOL,
-      validValues: [this.platform.Characteristic.TargetHeatingCoolingState.COOL]
+      minValue: this.Characteristic.TargetHeatingCoolingState.OFF,
+      maxValue: this.Characteristic.TargetHeatingCoolingState.COOL,
+      validValues: [this.Characteristic.TargetHeatingCoolingState.COOL]
     });
 
     try {
@@ -69,7 +76,7 @@ export class Freezer {
         minStep: 0.1
       });
     } catch (error) {
-      this.platform.debug('blue', 'Error setting Freezer Current Temperature properties: ' + error);
+      this.client.debug('Error setting Freezer Current Temperature properties: ' + error);
     }
   //=====================================================================================
   // Change properties for the characteristic for a GE Profile Refrigerator temperature range is -21.111C (-6F) to -15C (5F)
@@ -82,25 +89,25 @@ export class Freezer {
       minStep: 0.1
     });
   } catch (error) {
-    this.platform.debug('blue', 'Error setting Freezer Target Temperature properties: ' + error);
+    this.client.debug('Error setting Freezer Target Temperature properties: ' + error);
   }
 
   // create handlers for required characteristics
-  freezerThermostat.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState)
+  freezerThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState)
     .onGet(this.getCurrentHeatingCoolingState.bind(this));
 
-  freezerThermostat.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
+  freezerThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState)
     .onGet(this.getCurrentHeatingCoolingState.bind(this))
     .onSet(this.setTargetHeatingCoolingState.bind(this));
 
-  freezerThermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
+  freezerThermostat.getCharacteristic(this.Characteristic.CurrentTemperature)
     .onGet(this.getFreezerTemperature.bind(this));
 
-  freezerThermostat.getCharacteristic(this.platform.Characteristic.TargetTemperature)
+  freezerThermostat.getCharacteristic(this.Characteristic.TargetTemperature)
     .onGet(this.getFreezerTargetTemperature.bind(this))
     .onSet(this.setFreezerTemperature.bind(this));
 
-  freezerThermostat.getCharacteristic(this.platform.Characteristic.TemperatureDisplayUnits)
+  freezerThermostat.getCharacteristic(this.Characteristic.TemperatureDisplayUnits)
     .onGet(this.handleTemperatureDisplayUnitsGet.bind(this))
     .onSet(this.handleTemperatureDisplayUnitsSet.bind(this)); 
 
@@ -111,7 +118,7 @@ export class Freezer {
   setInterval(() => {
     // push the new value to HomeKit
     this.getFreezerTemperature().then(temp => {
-      freezerThermostat.getCharacteristic(this.platform.Characteristic.CurrentTemperature).updateValue(temp);
+      freezerThermostat.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(temp);
     });
   }, 10000);       // every 10 seconds
   
@@ -123,22 +130,25 @@ export class Freezer {
     for (const service of this.deviceServices) {
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator.freezer' 
         && service.serviceType       === 'cloud.smarthq.service.temperature') {
-
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.celsiusConverted == null) {
-          this.platform.debug('blue', 'No celsiusConverted returned from getFreezerTemperature state');
-          return -17.77;  // Return -17.77C (0F) if no data
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response?.state?.celsiusConverted == null) {
+            this.client.debug('No celsiusConverted returned from getFreezerTemperature state');
+            return -17.77;  // Return -17.77C (0F) if no data
+          }
+          temp = Number(response?.state?.celsiusConverted);
+          break;
+        } catch (error) {
+            this.client.debug(`error response from getFreezerTemperature: ${error}`);
+          return -17.77;  // Return -17.77C (0F) on error
         }
-        temp = state?.celsiusConverted;
-        break;
-      } 
+      }
     }
     return temp;
   }
   
   //=====================================================================================
   async setFreezerTemperature(value: CharacteristicValue) {
-    this.platform.debug('blue', "Triggered setTemperature");
    
     const cmdBody = {
       command: {
@@ -151,11 +161,15 @@ export class Freezer {
       serviceType:        'cloud.smarthq.service.temperature',
       domainType:         'cloud.smarthq.domain.setpoint'
     };
-     const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+    try { 
+      const response = await this.client.sendCommand(cmdBody);
 
-    if (response == null) {
-      this.platform.debug('blue', 'No response from setFreezerTemperature command');
-      return;
+      if (response == null) {
+        this.client.debug('No response from setFreezerTemperature command');
+        return;
+      }
+    } catch (error) {
+      this.client.debug('Error sending setFreezerTemperature command: ' + error);
     }
   };
 
@@ -166,7 +180,7 @@ export class Freezer {
   getCurrentHeatingCoolingState() {
 
     // set this to a valid value for CurrentHeatingCoolingState
-    const currentValue = this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
+    const currentValue = this.Characteristic.CurrentHeatingCoolingState.COOL;
 
     return currentValue;
   }
@@ -179,7 +193,7 @@ export class Freezer {
   setCurrentHeatingCoolingState() {
 
     // set this to a valid value for TargetHeatingCoolingState
-    const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
+    const currentValue = this.Characteristic.TargetHeatingCoolingState.COOL;
 
     return currentValue;
   }
@@ -191,8 +205,7 @@ export class Freezer {
   setTargetHeatingCoolingState() {
     // Nothing to do since refrigerator can only be in COOL mode
   
-    const currentValue = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
-    this.platform.debug('blue', 'setTargetHeatingCoolingState called, returning: ' + currentValue);
+    const currentValue = this.Characteristic.TargetHeatingCoolingState.COOL;
     
     return currentValue;
   }
@@ -210,7 +223,7 @@ export class Freezer {
    handleTemperatureDisplayUnitsGet() {
 
     // set this to a valid value for TemperatureDisplayUnits
-    const currentValue = this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS;
+    const currentValue = this.Characteristic.TemperatureDisplayUnits.CELSIUS;
 
     return currentValue;
   }
@@ -220,7 +233,7 @@ export class Freezer {
    */
   //=====================================================================================
   handleTemperatureDisplayUnitsSet(value: CharacteristicValue) {
-    this.platform.debug('blue', 'handleTemperatureDisplayUnitsSet value: ' + value);
+    this.client.debug('handleTemperatureDisplayUnitsSet value: ' + value);
   }
 
 

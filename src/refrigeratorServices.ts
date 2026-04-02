@@ -15,46 +15,45 @@ import { TemperatureUnits }   from './refrigerator/temperatureUnits.js';
 import { TurboCoolMode }      from './refrigerator/turboCoolMode.js';
 import { WaterFilter }        from './refrigerator/waterFilter.js';
 import { RefrigeratorAlerts } from './refrigerator/refrigeratorAlerts.js';
-import { DevService }         from './smarthq-types.js';
 import { PlatformAccessory }  from 'homebridge';
 import { SmartHqPlatform }    from './platform.js';
-import { DevDevice }          from './smarthq-types.js';
+import { DeviceService }      from 'ge-smarthq';
 
 
-  export function setupRefrigeratorServices(this: SmartHqPlatform, accessory: PlatformAccessory, device: DevDevice, deviceServices: DevService[]) {
-    new Refrigerator(this, accessory, deviceServices, device.deviceId);
-    new Freezer(this, accessory, deviceServices, device.deviceId);
+  export function setupRefrigeratorServices(this: SmartHqPlatform, accessory: PlatformAccessory, deviceServices: DeviceService[], deviceId: string) {
+    new Refrigerator(this, accessory, deviceServices, deviceId);
+    new Freezer(this, accessory, deviceServices, deviceId);
 
     if (this.config.addConvertibleDrawer) {
-      new ConvertibleDrawer(this, accessory, deviceServices, device.deviceId);}
+      new ConvertibleDrawer(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addControlLock) {
-      new ControlLock(this, accessory, deviceServices, device.deviceId);}
+      new ControlLock(this, accessory, deviceServices, deviceId);}
       
     if (this.config.addDispenserLight) {
-      new DispenserLight(this, accessory, deviceServices, device.deviceId);}
+      new DispenserLight(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addEnergyMonitor) {
-      new EnergySensor(this, accessory, deviceServices, device.deviceId);}
+      new EnergySensor(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addIceMaker) {
-      new IceMaker(this, accessory, deviceServices, device.deviceId);}
+      new IceMaker(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addInteriorLight) {
-      new InteriorLight(this, accessory, deviceServices, device.deviceId);}
+      new InteriorLight(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addSabbathMode) {
-      new SabbathMode(this, accessory, deviceServices, device.deviceId);}
+      new SabbathMode(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addTemperatureUnits) {
-      new TemperatureUnits(this, accessory, deviceServices, device.deviceId);}
+      new TemperatureUnits(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addTurboCool) {
-      new TurboCoolMode(this, accessory, deviceServices, device.deviceId);}
+      new TurboCoolMode(this, accessory, deviceServices, deviceId);}
 
     if (this.config.addWaterFilter) {
-      new WaterFilter(this, accessory, deviceServices, device.deviceId); }
+      new WaterFilter(this, accessory, deviceServices, deviceId); }
 
-    if (this.config.addAlerts) {
-      new RefrigeratorAlerts(this, accessory, deviceServices, device.deviceId); }
+   if (this.config.addAlerts) {
+      new RefrigeratorAlerts(this, accessory, deviceServices, deviceId); }
   } 

@@ -1,7 +1,6 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -9,31 +8,45 @@ import { DevService } from '../smarthq-types.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class InteriorLight {
-private readonly smartHqApi: SmartHqApi;
-  private log : Logging;
+  private client: SmartHQClient;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+  private readonly api: API;
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
+    public readonly deviceServices: DeviceService[],
+    public readonly deviceId: string,
     ) {
-    this.platform = platform;
+
+    this.api = platform.api; 
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
-    this.log = platform.log;
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
+    
 
-    this.smartHqApi = new SmartHqApi(this.platform); 
-
-    if (!this.platform.deviceSupportsThisService(this.deviceServices, 
-          'cloud.smarthq.device.refrigerator',
-          'cloud.smarthq.service.integer',
-          'cloud.smarthq.domain.brightness.light')) {
-      this.log.info('No supported Interior Light service found for device: ' + this.accessory.displayName);
+    let hasInteriorLight = false;
+    for (const service of deviceServices) {
+      if (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator'
+        && service.serviceType      === 'cloud.smarthq.service.integer'
+        && service.domainType       === 'cloud.smarthq.domain.brightness.light') {
+        hasInteriorLight = true;
+      }
+    }
+    if (!hasInteriorLight) {
+      this.client.debug('No supported Interior Light service found for device: ' + this.accessory.displayName);
       return;
     }
-    this.platform.debug('green', 'Adding Interior Light Switch');
+    this.client.debug('Adding Interior Light Switch');
     // set accessory information
     
     //=====================================================================================
@@ -41,18 +54,18 @@ private readonly smartHqApi: SmartHqApi;
     //=====================================================================================
     const displayName = "Fridge Light"; 
     const refrigeratorLight = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Lightbulb, displayName, 'brightness-light-2');
+    || this.accessory.addService(this.Service.Lightbulb, displayName, 'brightness-light-2');
     
-    refrigeratorLight.setCharacteristic(this.platform.Characteristic.Name,  displayName);
-    refrigeratorLight.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    refrigeratorLight.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    refrigeratorLight.setCharacteristic(this.Characteristic.Name,  displayName);
+    refrigeratorLight.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    refrigeratorLight.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
-    refrigeratorLight.getCharacteristic(this.platform.Characteristic.On).updateValue(true);
-    refrigeratorLight.getCharacteristic(this.platform.Characteristic.On)
+    refrigeratorLight.getCharacteristic(this.Characteristic.On).updateValue(true);
+    refrigeratorLight.getCharacteristic(this.Characteristic.On)
       .onGet(this.getRefrigBrightnessLightOn.bind(this))
       .onSet(this.setRefrigBrightnessLightOn.bind(this));
 
-    refrigeratorLight.getCharacteristic(this.platform.Characteristic.Brightness)
+    refrigeratorLight.getCharacteristic(this.Characteristic.Brightness)
       .onGet(this.getFridgeBackLight.bind(this))
       .onSet(this.setFridgeBackLight.bind(this));
 }
@@ -65,14 +78,18 @@ private readonly smartHqApi: SmartHqApi;
       if  (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator' 
         && service.serviceType       === 'cloud.smarthq.service.integer') {
 
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.value == null) {
-          this.platform.debug('blue', 'No state.value returned from getFridgeBackLight state');
-          return false;
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response?.state?.value == null) {
+            this.client.debug('No state.value returned from getFridgeBackLight state');
+            return false;
+          }
+          brightness = Number(response?.state?.value);
+          break;
+        } catch (error) {
+          this.client.debug('Error getting Refrigerator Back Light value: ' + error);
         }
-        brightness = state?.value;
-        break;
-      } 
+      }
     }
     return brightness;
   }
@@ -93,11 +110,15 @@ private readonly smartHqApi: SmartHqApi;
       domainType:         'cloud.smarthq.domain.brightness.light'
     };
     
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+    try {
+      const response = await this.client.sendCommand(cmdBody);
 
-    if (response == null) {
-      this.platform.debug('blue', 'No response from setFridgeBackLight command');
-      return;
+      if (response == null) {
+        this.client.debug('No response from setFridgeBackLight command');
+        return;
+      }
+    } catch (error) {
+      this.client.debug('Error sending setFridgeBackLight command: ' + error);
     }
 };
  

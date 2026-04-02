@@ -1,7 +1,7 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
+
 
 /**
  * Platform Accessory
@@ -9,37 +9,48 @@ import { DevService } from '../smarthq-types.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class WaterFilter {
-
-  private readonly smartHqApi: SmartHqApi;
-  private log : Logging;
+  private client: SmartHQClient;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+  private readonly api: API;
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
+    public readonly deviceServices: DeviceService[],
+    public readonly deviceId: string,
     ) {
-    this.platform = platform;
+
+    this.api = platform.api; 
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
-    this.log = platform.log;
-
-    this.smartHqApi = new SmartHqApi(this.platform); 
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
 
     //=====================================================================================
     // Check to see if the device has any supported FilterMaintenance services
     // If not, then don't add services for device that doesn't support it
     //=====================================================================================
-
-    if (!this.platform.deviceSupportsThisService(this.deviceServices, 
-          'cloud.smarthq.device.waterfilter',
-          'cloud.smarthq.service.mode',
-          'cloud.smarthq.domain.state')) {
-      this.log.info('No supported FilterMaintenance service found for device: ' + this.accessory.displayName);
+    let hasFilterMaintenance = false;
+    for (const service of deviceServices) {
+      if (service.serviceDeviceType === 'cloud.smarthq.device.waterfilter' 
+        && service.serviceType      === 'cloud.smarthq.service.mode'
+        && service.domainType       === 'cloud.smarthq.domain.state') {
+        hasFilterMaintenance = true;
+      }
+    }
+    if (!hasFilterMaintenance) {
+      this.client.debug('No supported Filter Maintenance service found for device: ' + this.accessory.displayName);
       return;
     }
-    this.platform.debug('green', 'Adding a Water Filter Sensor');
+    this.client.debug('Adding a Water Filter Sensor');
 
     //=====================================================================================
     // create a new water FilterMaintenance service for the Refrigerator
@@ -50,28 +61,26 @@ export class WaterFilter {
     const displayName = "Filter Life";
     const displayName2 = "Filter Life Level";
     const refrigeratorWaterFilter = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.FilterMaintenance, displayName, 'filter-maintenance-1');
-    refrigeratorWaterFilter.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    refrigeratorWaterFilter.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    || this.accessory.addService(this.Service.FilterMaintenance, displayName, 'filter-maintenance-1');
+    refrigeratorWaterFilter.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    refrigeratorWaterFilter.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
     // add a lightbulb service to show the filter life level as a percentage in the Home app 
     const refrigeratorPseudoFilter = this.accessory.getService(displayName2) 
-    || this.accessory.addService(this.platform.Service.Lightbulb, displayName2, 'filter-maintenance-2');
+    || this.accessory.addService(this.Service.Lightbulb, displayName2, 'filter-maintenance-2');
 
-    this.platform.debug('green', 'Adding a pseudo Water Filter Level indicator');
-    refrigeratorPseudoFilter.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    refrigeratorPseudoFilter.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName2)
-    refrigeratorPseudoFilter.getCharacteristic(this.platform.Characteristic.On).updateValue(true);
-    refrigeratorPseudoFilter.getCharacteristic(this.platform.Characteristic.Brightness)
+    this.client.debug('Adding a pseudo Water Filter Level indicator');
+    refrigeratorPseudoFilter.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    refrigeratorPseudoFilter.setCharacteristic(this.Characteristic.ConfiguredName, displayName2)
+    refrigeratorPseudoFilter.getCharacteristic(this.Characteristic.On).updateValue(true);
+    refrigeratorPseudoFilter.getCharacteristic(this.Characteristic.Brightness)
       .onGet(this.getWaterFilterLifeLevel.bind(this))
       .onSet(this.getWaterFilterLifeLevel.bind(this)); 
 
-    refrigeratorWaterFilter.getCharacteristic(this.platform.Characteristic.FilterChangeIndication)
+    refrigeratorWaterFilter.getCharacteristic(this.Characteristic.FilterChangeIndication)
       .onGet(this.getWaterFilterChangeIndication.bind(this));
-      refrigeratorWaterFilter.getCharacteristic(this.platform.Characteristic.FilterLifeLevel)
+      refrigeratorWaterFilter.getCharacteristic(this.Characteristic.FilterLifeLevel)
       .onGet(this.getWaterFilterLifeLevel.bind(this));
-      
-    
   
   }
   //=====================================================================================
@@ -81,18 +90,18 @@ export class WaterFilter {
       if (service.serviceDeviceType === 'cloud.smarthq.device.waterfilter' 
         && service.serviceType      === 'cloud.smarthq.service.mode') {
 
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.mode == null) {
-          this.platform.debug('blue', 'No state.mode returned from getWaterFilterChangeIndication state');
+        const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+        if (response?.state?.mode == null) {
+          console.debug('[SmartHq] No state.mode returned from getWaterFilterChangeIndication state');
           return false;
         }
-        if (state?.mode  === 'cloud.smarthq.type.mode.good'
-          || state?.mode === 'cloud.smarthq.type.mode.bypass'
-          || state?.mode === 'cloud.smarthq.type.mode.expiringsoon'
+        if (response?.state?.mode  === 'cloud.smarthq.type.mode.good'
+          || response?.state?.mode === 'cloud.smarthq.type.mode.bypass'
+          || response?.state?.mode === 'cloud.smarthq.type.mode.expiringsoon'
         ) {
-            filterStatus = this.platform.Characteristic.FilterChangeIndication.FILTER_OK;
+            filterStatus = this.Characteristic.FilterChangeIndication.FILTER_OK;
         } else {
-            filterStatus = this.platform.Characteristic.FilterChangeIndication.CHANGE_FILTER;
+            filterStatus = this.Characteristic.FilterChangeIndication.CHANGE_FILTER;
         }
       }
     }
@@ -107,17 +116,22 @@ export class WaterFilter {
       if (service.serviceDeviceType === 'cloud.smarthq.device.waterfilter' 
         && service.serviceType      === 'cloud.smarthq.service.integer') {
 
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.value == null) {
-          this.platform.debug('blue', 'No value returned from getWaterFilterLifeLevel state');
+        try {
+        const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+        if (response?.state?.value == null) {
+          console.debug('[SmartHq] No value returned from getWaterFilterLifeLevel state');
           return false;
         }
-        filterRemaining = state?.value;
+        filterRemaining = Number(response?.state?.value);
+        } catch (error) {
+          console.error('[SmartHq] Error getting water filter life level:', error);
+          return false;
+        }
       }
     }
     // Update the Brightness characteristic of the pseudo filter service to show the filter life level as a percentage
       const filterLevel = this.accessory.getService("Filter Life Level");
-      filterLevel?.getCharacteristic(this.platform.Characteristic.Brightness).updateValue(filterRemaining);
+      filterLevel?.getCharacteristic(this.Characteristic.Brightness).updateValue(filterRemaining);
     return filterRemaining;
   }
 

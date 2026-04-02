@@ -1,7 +1,6 @@
-import { CharacteristicValue, PlatformAccessory, Logging } from 'homebridge';
+import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
-import { SmartHqApi } from '../smartHqApi.js';
-import { DevService } from '../smarthq-types.js';
 
 /**
  * Platform Accessory
@@ -9,37 +8,48 @@ import { DevService } from '../smarthq-types.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class TemperatureUnits {
-
-  private readonly smartHqApi: SmartHqApi;
-  private log : Logging;
+  private client: SmartHQClient;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+  private readonly api: API;
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
-    public readonly deviceServices: DevService[],
-    public readonly deviceId: string
+    public readonly deviceServices: DeviceService[],
+    public readonly deviceId: string,
     ) {
-    this.platform = platform;
+
+    this.api = platform.api; 
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
-    this.log = platform.log;
-
-    this.smartHqApi = new SmartHqApi(this.platform); 
+    this.client = new SmartHQClient({
+      clientId:       platform.config.clientId,
+      clientSecret:   platform.config.clientSecret,
+      redirectUri:    platform.config.redirectUri,
+      debug:          platform.config.debugLogging || false,
+    });
 
     //=====================================================================================
     // Check to see if the device has any supported Temperature Units services
     // If not, then don't add services for device that doesn't support it
     //=====================================================================================
-
-    if (!this.platform.deviceSupportsThisService(this.deviceServices, 
-          'cloud.smarthq.device.refrigerator',
-          'cloud.smarthq.service.mode',
-          'cloud.smarthq.domain.temperatureunits')) {
-      this.log.info('No supported Temperature Units service found for device: ' + this.accessory.displayName);
+    let hasTemperatureUnits = false;
+    for (const service of deviceServices) {
+      if (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator' 
+        && service.serviceType      === 'cloud.smarthq.service.mode'
+        && service.domainType       === 'cloud.smarthq.domain.temperatureunits') {
+        hasTemperatureUnits = true;
+      }
+    }
+    if (!hasTemperatureUnits) {
+      console.log('[SmartHq] No supported Temperature Units service found for device: ' + this.accessory.displayName);
       return;
     }
-    this.platform.debug('green', 'Adding Temperature Units Switches');
+    this.client.debug('Adding Temperature Units Switches');
 
     //=====================================================================================
     // create Temperature Unit switches for the Refrigerator 
@@ -47,13 +57,13 @@ export class TemperatureUnits {
     let displayName = "Units: Celsius"; 
 
     const unitsCelsius = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'units-celsius-123');
-    unitsCelsius.setCharacteristic(this.platform.Characteristic.Name, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName, 'units-celsius-123');
+    unitsCelsius.setCharacteristic(this.Characteristic.Name, displayName);
 
-    unitsCelsius.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    unitsCelsius.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    unitsCelsius.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    unitsCelsius.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
     
-    unitsCelsius.getCharacteristic(this.platform.Characteristic.On)
+    unitsCelsius.getCharacteristic(this.Characteristic.On)
       .onGet(this.getunitsCelsius.bind(this))
       .onSet(this.setunitsCelsius.bind(this));
 
@@ -61,12 +71,12 @@ export class TemperatureUnits {
     displayName = "Units: Fahrenheit"; 
 
     const unitsFahrenheit = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.platform.Service.Switch, displayName, 'units-fahrenheit-123');
-    unitsFahrenheit.setCharacteristic(this.platform.Characteristic.Name, displayName);
-    unitsFahrenheit.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName)
-    unitsFahrenheit.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName)
+    || this.accessory.addService(this.Service.Switch, displayName, 'units-fahrenheit-123');
+    unitsFahrenheit.setCharacteristic(this.Characteristic.Name, displayName);
+    unitsFahrenheit.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    unitsFahrenheit.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
     
-    unitsFahrenheit.getCharacteristic(this.platform.Characteristic.On)
+    unitsFahrenheit.getCharacteristic(this.Characteristic.On)
       .onGet(this.getunitsFahrenheit.bind(this))
       .onSet(this.setunitsFahrenheit.bind(this));
 
@@ -81,15 +91,20 @@ export class TemperatureUnits {
       if (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator' 
         && service.serviceType === 'cloud.smarthq.service.mode'
         && service.domainType === 'cloud.smarthq.domain.temperatureunits') {
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.mode == null) {
-          this.platform.debug('blue', 'No state.mode returned from getunitsCelsius state');
-          return false;
-        }
-        const units = state?.mode;
-        if (units === 'cloud.smarthq.type.mode.celsius') {
-          isOn = true;
-        }
+          try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response?.state?.mode == null) {
+            this.client.debug('No state.mode returned from getunitsCelsius state');
+            return false;
+          }
+          const units = response?.state?.mode;
+          if (units === 'cloud.smarthq.type.mode.celsius') {
+            isOn = true;
+          }
+          } catch (error) {
+            this.client.debug('Error getting units Celsius state: ' + error);
+            return false;
+          }
       }
     }
     return isOn;
@@ -111,16 +126,21 @@ export class TemperatureUnits {
         domainType: 'cloud.smarthq.domain.temperatureunits'
       };
 
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+    try {
+      const response = await this.client.sendCommand(cmdBody);
 
-    if (response == null) {
-      this.platform.debug('blue', 'No response from setunitsCelsius command');
+      if (response == null) {
+        this.client.debug('No response from setunitsCelsius command');
+        return;
+      }
+    } catch (error) {
+      this.client.debug('Error sending setunitsCelsius command: ' + error);
       return;
-    }
+    } 
     
       // Update the opposite switch
       const unitsFahrenheit = this.accessory.getService("Units: Fahrenheit");
-      unitsFahrenheit?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
+      unitsFahrenheit?.getCharacteristic(this.Characteristic.On).updateValue(false);
     }
   }
   //=====================================================================================
@@ -132,15 +152,20 @@ export class TemperatureUnits {
       if (service.serviceDeviceType === 'cloud.smarthq.device.refrigerator' 
         && service.serviceType === 'cloud.smarthq.service.mode'
         && service.domainType === 'cloud.smarthq.domain.temperatureunits') {
-        const state = await this.smartHqApi.getServiceState(this.deviceId, service.serviceId);
-        if (state?.mode == null) {
-          this.platform.debug('blue', 'No state.mode returned from getunitsFahrenheit state');
-          return false;
-        }
-        const units = state?.mode;
-        if (units === 'cloud.smarthq.type.mode.fahrenheit') {
-          isOn = true;
-        }
+          try {
+            const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+            if (response?.state?.mode == null) {
+              this.client.debug('No state.mode returned from getunitsFahrenheit state');
+              return false;
+            }
+            const units = response?.state?.mode;
+            if (units === 'cloud.smarthq.type.mode.fahrenheit') {
+              isOn = true;
+            }
+          } catch (error) {
+            this.client.debug('Error getting units Fahrenheit state: ' + error);
+            return false;
+          }
       }
     }
     return isOn;
@@ -148,7 +173,6 @@ export class TemperatureUnits {
 
   //=====================================================================================
   async setunitsFahrenheit(value: CharacteristicValue) {
-    this.platform.debug("blue", "Triggered setunitsFahrenheit: " + value);
     if (value) {
       const cmdBody = {
         command: {
@@ -162,17 +186,22 @@ export class TemperatureUnits {
         domainType: 'cloud.smarthq.domain.temperatureunits'
       };
 
-    const response = await this.smartHqApi.command(JSON.stringify(cmdBody));
+      try {
+        const response = await this.client.sendCommand(cmdBody);
 
-    if (response == null) {
-      this.platform.debug('blue', 'No response from setunitsFahrenheit command');
-      return;
-    }
+        if (response == null) {
+          this.client.debug('No response from setunitsFahrenheit command');
+          return;
+        }
+      } catch (error) {
+        this.client.debug('Error sending setunitsFahrenheit command: ' + error);
+        return;
+      }
     
       // Update the opposite switch
     // Update the opposite switch
       const unitsCelsius = this.accessory.getService("Units: Celsius");
-      unitsCelsius?.getCharacteristic(this.platform.Characteristic.On).updateValue(false);
+      unitsCelsius?.getCharacteristic(this.Characteristic.On).updateValue(false);
     }
   }
 }
