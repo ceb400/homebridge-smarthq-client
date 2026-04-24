@@ -132,7 +132,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
 
     const recentAlerts = await this.client.getRecentAlerts(params);     // prints alert messages to the log for any device
     for (const alert of recentAlerts.alerts) {
-      this.log.info(chalk.yellow(`Recent Alert at: ${alert.lastAlertTime} for device ${alert.deviceType}: ${alert.alertType}`));
+      this.debug('yellow', `Recent Alert at: ${alert.lastAlertTime} for device ${alert.deviceType}: ${alert.alertType}`);
     }
 
     // remove accessories from the cache which are no longer present
