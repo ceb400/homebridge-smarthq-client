@@ -4,8 +4,12 @@
   "singular": true,
   "schema": {
     "type": "object",
-    "required": ["clientId", "clientSecret"],
     "properties": {
+      "name": {
+        "type": "string",
+        "title": "Name",
+        "default": "GE SmartHQ"
+      },
       "clientId": {
         "type": "string",
         "title": "SmartHQ Client ID",
@@ -81,17 +85,51 @@
         "title": "Add Alert Notifications",
         "default": false
       },
+      "addDwSabbath": {
+        "type": "boolean",
+        "title": "Add Sabbath Mode Control",
+        "default": false
+      },
+      "addDwSound": {
+        "type": "boolean",
+        "title": "Add Sound Option Control",
+        "default": false
+      },
+      "addDwFanFresh": {
+        "type": "boolean",
+        "title": "Add Fan Fresh Control",
+        "default": false
+      },
+      "addDwControlLock": {
+        "type": "boolean",
+        "title": "Add Control Lock Control",
+        "default": false
+      },
       "debugLogging": {
         "type": "boolean",
         "title": "Plugin Debug Logging w/Chalk Colors",
         "default": false
       },
-      "debugServices": {
+      "debugServicesFridge": {
         "type": "boolean",
-        "title": "Display Service Details for all discovered services",
+        "title": "Display Service Details for only refrigerator services",
+        "default": false
+      },
+      "debugServicesDishwasher": {
+        "type": "boolean",
+        "title": "Display Service Details for only dishwasher services",
+        "default": false
+      },
+      "debugServicesAll": {
+        "type": "boolean",
+        "title": "Display Service Details for all discovered device services",
         "default": false
       }
-    }
+    },
+    "required": [
+      "clientId",
+      "clientSecret"
+    ]
   },
   "layout": [
     {
@@ -104,6 +142,23 @@
             "clientId",
             "clientSecret",
             "redirectUri"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Dishwasher Services",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "description": "Include the selected dishwasher services.",
+          "items": [
+            "addDwSabbath",
+            "addDwSound",
+            "addDwFanFresh",
+            "addDwControlLock"
           ]
         }
       ]
@@ -139,7 +194,9 @@
       "expanded": false,
       "items": [
         "debugLogging",
-        "debugServices"
+        "debugServicesAll",
+        "debugServicesFridge",
+        "debugServicesDishwasher"
       ]
     }
   ]

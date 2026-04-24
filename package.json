@@ -1,32 +1,33 @@
 {
   "name": "homebridge-smarthq-client",
-  "displayName": "Homebridge GE SmartHQ",
-  "type": "module",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "private": false,
-  "description": "Plugin for controlling GE refrigerator via SmartHQ API.",
-  "author": "C Baumann",
-  "license": "Apache-2.0",
-  "homepage": "https://github.com/ceb400/homebridge-smarthq-client#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ceb400/homebridge-smarthq-client.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ceb400/homebridge-smarthq-client/issues"
-  },
+  "description": "Plugin for controlling GE refrigerator and dishwasher via SmartHQ API.",
   "keywords": [
     "homebridge-plugin",
     "SmartHQ",
     "GE Refrigerator",
     "refrigerator",
+    "GE Dishwasher",
+    "dishwasher",
     "smart appliance",
     "OAuth2"
   ],
+  "homepage": "https://github.com/ceb400/homebridge-smarthq-client#readme",
+  "bugs": {
+    "url": "https://github.com/ceb400/homebridge-smarthq-client/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ceb400/homebridge-smarthq-client.git"
+  },
+  "license": "MIT",
+  "author": "C Baumann",
+  "type": "module",
   "main": "dist/index.js",
-  "engines": {
-    "node": "^20.18.0 || ^22.10.0 || ^24.0.0",
-    "homebridge": "^1.8.0 || ^2.0.0-beta.0"
+  "types": "./dist/index.d.ts",
+  "directories": {
+    "test": "test"
   },
   "scripts": {
     "build": "npm run lint && rimraf ./dist && tsc",
@@ -35,27 +36,36 @@
     "watch": "npm run build && npm link && nodemon"
   },
   "dependencies": {
-    "axios": "^1.13.2",
+    "@matter/main": "^0.17.0-alpha.0-20260422-79d4eee90",
+    "axios": "^1.13.6",
     "chalk": "^5.6.2",
     "express": "^5.2.1",
-    "homebridge-lib": "^7.1.12",
+    "ge-smarthq": "^1.0.1",
+    "homebridge-lib": "^7.3.2",
     "node-fetch": "^3.3.2",
     "node-persist": "^4.0.4",
     "open": "^11.0.0",
-    "url-parse": "^1.5.10"
+    "url-parse": "^1.5.10",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",
-    "@types/node": "^24.10.4",
+    "@types/node": "^25.5.0",
     "@types/node-persist": "^3.1.8",
-    "eslint": "^9.39.2",
-    "globals": "^17.2.0",
+    "@types/ws": "^8.18.1",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0",
     "homebridge": "^2.0.0-beta.55",
-    "nodemon": "^3.1.11",
-    "rimraf": "^6.1.0",
+    "nodemon": "^3.1.14",
+    "rimraf": "^6.1.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0"
-  }
+    "typescript-eslint": "^8.57.1"
+  },
+  "engines": {
+    "node": "^20.18.0 || ^22.10.0 || ^24.0.0",
+    "homebridge": "^1.8.0 || ^2.0.0-beta.0"
+  },
+  "displayName": "Homebridge GE SmartHQ"
 }

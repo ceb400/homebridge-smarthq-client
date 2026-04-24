@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    "skipLibCheck": true,
     "lib": [
       "DOM",
       "ES2022"
@@ -20,5 +21,9 @@
     "eslint.config.js",
     "homebridge-ui",
     "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }

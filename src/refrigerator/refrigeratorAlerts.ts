@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService, AlertMessage } from 'ge-smarthq';
+import { SmartHQClient, DeviceService, AlertMessage, PresenceMessage } from 'ge-smarthq';
 import { SmartHqPlatform }              from '../platform.js';
 
 /**
@@ -65,8 +65,8 @@ export class RefrigeratorAlerts {
         this.setAlertUpdateOn(true);
       }
     });
-    this.client.on('presence', (message: string) => {
-      this.client.debug('Refrig-Alerts Presence:'+ JSON.stringify(message));
+    this.client.on('presence', (message: PresenceMessage) => {
+      this.client.debug(message.deviceType + ' presence update: ' + JSON.stringify(message.presence));
     });
     this.client.on('command_outcome', (message: string) => {
       this.client.debug('Refrig-Alerts Command Outcome:'+ JSON.stringify(message, null, 2));

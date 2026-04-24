@@ -1,6 +1,8 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
 import { SmartHQClient, DeviceService } from 'ge-smarthq';
-import { SmartHqPlatform } from '../platform.js'
+import { SmartHqPlatform }              from '../platform.js'
+import { ServiceMessage }               from "../index.js";
+import chalk                            from 'chalk';
 
 /**
  * Platform Accessory
@@ -15,6 +17,7 @@ export class Refrigerator {
   public  Service: typeof Service;
   public  Characteristic: typeof Characteristic;
   private  api: API;
+  private energyMeterValuePerHour = 0;
 
   constructor(
     private readonly platform: SmartHqPlatform,
@@ -36,6 +39,31 @@ export class Refrigerator {
       debug:          platform.config.debugLogging || false,
     });
     
+
+    this.setupWebSocket();
+
+    /*
+      *  Listen for WebSocket messages for this device and update HomeKit characteristics accordingly
+      */
+    this.client.on("service_update", (message: ServiceMessage) => {
+      //this.client.debug(chalk.red('Wash Modes - Service Update:'+ JSON.stringify(message, null, 2)));
+      if (message.domainType === "cloud.smarthq.domain.energy" && message.deviceType === "cloud.smarthq.device.refrigerator") {
+        this.client.debug('Interval Estimated energy for ' + message.deviceType + ' = ' + message.state?.meterValueDelta);
+        this.energyMeterValuePerHour += (message.state?.meterValueDelta as number) || 0; // sum for the hour until reset
+      }
+    });
+
+     //=====================================================================================
+    setInterval(
+      () => {
+        this.client.debug(
+          chalk.red("Resetting hourly value: " + this.energyMeterValuePerHour),
+        );
+        this.energyMeterValuePerHour = 0;
+      },
+      60 * 60 * 1000,
+    );
+
     this.client.debug('Adding Refrigerator Thermostat');
     
     // set accessory information
@@ -253,6 +281,16 @@ export class Refrigerator {
   handleTemperatureDisplayUnitsSet(value: CharacteristicValue) {
     if (value === this.Characteristic.TemperatureDisplayUnits.FAHRENHEIT) {
       this.client.debug('Temperature Display Units set to FAHRENHEIT');
+    }
+  }
+
+  async setupWebSocket() {
+    try {
+      await this.client.connect();
+    } catch (error) {
+      console.log(
+        "Failed to connect to SmartHQ WebSocket during platform initialization: " + error,
+      );
     }
   }
 }

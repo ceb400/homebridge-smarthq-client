@@ -1,16 +1,17 @@
 export interface DevService {
-  serviceType: string;
-  lastSyncTime: string;
-  domainType: string;
-  supportedCommands: string[];
-  state: Record<string, unknown>;
   serviceId: string;
+  serviceType: string;
+  domainType: string;
   serviceDeviceType: string;
-  config: Record<string, unknown>;
-  lastStateTime: string;
+  supportedCommands: string[];
+  state?: Record<string, unknown>;
+  config?: Record<string, unknown>;
+  lastStateTime?: string;
+  lastSyncTime?: string;
 }
 
 export interface DevDevice {
+    deviceId: string;
     deviceType: string;
     lastSyncTime: string;
     roomNumber: string;
@@ -18,7 +19,6 @@ export interface DevDevice {
     lastPresenceTime: string;
     createdDateTime: string;
     presence: string;
-    deviceId: string;
     gatewayId: string;
     room: string;
     icon: string;
@@ -27,5 +27,5 @@ export interface DevDevice {
     model: string;
     floor: string;
     macAddress: string;
-
 }
+
