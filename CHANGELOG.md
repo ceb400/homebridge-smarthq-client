@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.1.1) (2026-04-25)
+
+## What's Changed
+- Changed some log.info msgs to debug level to eliminate some normal log messages
+
+
 ## [1.1.0](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.1.0) (2026-04-25)
 
 ## What's Changed
