@@ -134,7 +134,7 @@ export class Dishwasher {
     setInterval(
       () => {
         this.client.debug(
-          chalk.red("Resetting hourly value: " + this.energyMeterValuePerHour),
+          chalk.red("Watts/hour value: " + this.energyMeterValuePerHour),
         );
         this.energyMeterValuePerHour = 0;
       },
@@ -478,10 +478,14 @@ export class Dishwasher {
             this.client.debug("No response from getrunstatus command");
             return false;
           }
-          if (response.state.runStatus !== "cloud.smarthq.type.runstatus.active") {
+          if (response.state.runStatus === "cloud.smarthq.type.runstatus.off") {
             // change back to 0 seconds remaining when cycle is not active to prevent stale remaining time value in HomeKit
             this.totalSeconds = 0; // reset total seconds when cycle is complete
             this.accessory
+              .getService("Dishwasher")
+              ?.getCharacteristic(this.Characteristic.Active)
+              .updateValue(false);
+              this.accessory
               .getService("Dishwasher")
               ?.getCharacteristic(this.Characteristic.SetDuration)
               .updateValue(0);
@@ -525,6 +529,13 @@ export class Dishwasher {
         this.client.debug("Failed to set mode, not starting cycle");
         return;
       }
+      this.platform.log.info(chalk.green("Starting dishwasher cycle with options:"));
+      this.platform.log.info(chalk.green(`Preset   : ${this.currentPreset}`));
+      this.platform.log.info(chalk.green(`Wash Temp: ${this.currentWashTemp}`));
+      this.platform.log.info(chalk.green(`Wash Zone: ${this.currentWashZone}`));
+      this.platform.log.info(chalk.green(`Heat Dry : ${this.currentHeatedDry}`));
+      this.platform.log.info(chalk.green(`Bottle Wash : ${this.currentbottleWash}`));
+      this.platform.log.info(chalk.green(`Steam Option: ${this.currentSteam}`));
       const startResp = await this.startCycle();
       if (!startResp) {
         this.client.debug("Failed to start cycle");

@@ -57,7 +57,7 @@ export class Refrigerator {
     setInterval(
       () => {
         this.client.debug(
-          chalk.red("Resetting hourly value: " + this.energyMeterValuePerHour),
+          chalk.red("Watts/hour value: " + this.energyMeterValuePerHour),
         );
         this.energyMeterValuePerHour = 0;
       },
