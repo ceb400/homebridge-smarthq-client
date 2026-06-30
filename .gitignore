@@ -1,5 +1,5 @@
 # Ignore compiled code
-dist
+#dist
 
 # ------------- Defaults ------------- #
 .DS_Store
@@ -87,7 +87,7 @@ web_modules/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist
 
 # Gatsby files
 .cache/

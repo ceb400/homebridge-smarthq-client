@@ -1,0 +1,377 @@
+import { SmartHQClient } from 'ge-smarthq';
+export class AirConditioner {
+    platform;
+    accessory;
+    deviceServices;
+    deviceId;
+    targetCelsius = 22.22;
+    targetMode = 'cloud.smarthq.type.thermostatmode.cool';
+    targetFanSpeed = 'cloud.smarthq.type.fanspeed.auto';
+    isOn = false;
+    client;
+    Service;
+    Characteristic;
+    api;
+    modeToHK = {};
+    hkToMode = {};
+    // Promoted to class properties so handlers outside constructor can access them
+    acThermostat;
+    acFan;
+    // Mode switch service references for mutual exclusion updates
+    modeSwitches = {};
+    constructor(platform, accessory, deviceServices, deviceId) {
+        this.platform = platform;
+        this.accessory = accessory;
+        this.deviceServices = deviceServices;
+        this.deviceId = deviceId;
+        this.api = platform.api;
+        this.Service = this.api.hap.Service;
+        this.Characteristic = this.api.hap.Characteristic;
+        this.client = new SmartHQClient({
+            clientId: platform.config.clientId,
+            clientSecret: platform.config.clientSecret,
+            redirectUri: platform.config.redirectUri,
+            debug: platform.config.debugLogging || false,
+        });
+        const HK = this.Characteristic.TargetHeatingCoolingState;
+        this.modeToHK = {
+            'cloud.smarthq.type.thermostatmode.cool': HK.COOL,
+            'cloud.smarthq.type.thermostatmode.cool.energysaver': HK.AUTO,
+            'cloud.smarthq.type.thermostatmode.fanonly': HK.OFF,
+            'cloud.smarthq.type.thermostatmode.dry': HK.COOL,
+        };
+        this.hkToMode = {
+            [HK.OFF]: 'cloud.smarthq.type.thermostatmode.fanonly',
+            [HK.COOL]: 'cloud.smarthq.type.thermostatmode.cool',
+            [HK.HEAT]: 'cloud.smarthq.type.thermostatmode.cool',
+            [HK.AUTO]: 'cloud.smarthq.type.thermostatmode.cool.energysaver',
+        };
+        // Seed initial state from service data at startup
+        const thermoSvc = this.findService('cloud.smarthq.service.thermostat.v1', 'cloud.smarthq.domain.thermostat');
+        if (thermoSvc?.state) {
+            if (thermoSvc.state.coolCelsiusConverted != null)
+                this.targetCelsius = thermoSvc.state.coolCelsiusConverted;
+            if (thermoSvc.state.mode != null)
+                this.targetMode = thermoSvc.state.mode;
+            if (thermoSvc.state.fanSpeed != null)
+                this.targetFanSpeed = thermoSvc.state.fanSpeed;
+            if (thermoSvc.state.on != null)
+                this.isOn = thermoSvc.state.on;
+        }
+        // authenticate() before connect() so both sendCommand and WebSocket work
+        this.setupWebSocket();
+        // WebSocket push updates
+        this.client.on('service_update', (message) => {
+            if (message.domainType === 'cloud.smarthq.domain.thermostat') {
+                if (message.state?.on !== undefined) {
+                    this.isOn = message.state.on;
+                    this.acFan.getCharacteristic(this.Characteristic.On).updateValue(this.isOn);
+                }
+                if (message.state?.coolCelsiusConverted !== undefined) {
+                    this.targetCelsius = message.state.coolCelsiusConverted;
+                    this.acThermostat.getCharacteristic(this.Characteristic.TargetTemperature).updateValue(this.targetCelsius);
+                }
+                if (message.state?.mode !== undefined) {
+                    this.targetMode = message.state.mode;
+                    const hkMode = this.modeToHK[this.targetMode] ?? HK.COOL;
+                    this.acThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).updateValue(hkMode);
+                    this.updateModeSwitches(this.targetMode);
+                }
+                if (message.state?.fanSpeed !== undefined) {
+                    this.targetFanSpeed = message.state.fanSpeed;
+                    this.acFan.getCharacteristic(this.Characteristic.RotationSpeed).updateValue(this.fanSpeedToPercent(this.targetFanSpeed));
+                }
+            }
+            if (message.domainType === 'cloud.smarthq.domain.state.compressor') {
+                const running = message.state?.on;
+                const currentState = running
+                    ? this.Characteristic.CurrentHeatingCoolingState.COOL
+                    : this.Characteristic.CurrentHeatingCoolingState.OFF;
+                this.acThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState).updateValue(currentState);
+            }
+        });
+        // ── Accessory information ────────────────────────────────────────────────
+        this.accessory.getService(this.Service.AccessoryInformation)
+            .setCharacteristic(this.Characteristic.Manufacturer, 'GE')
+            .setCharacteristic(this.Characteristic.Model, accessory.context.device.model || 'AHTT08BC')
+            .setCharacteristic(this.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
+        // ── Thermostat service ───────────────────────────────────────────────────
+        const displayName = 'Air Conditioner';
+        this.acThermostat = this.accessory.getService(displayName)
+            || this.accessory.addService(this.Service.Thermostat, displayName, 'ac-thermo1');
+        this.acThermostat.setCharacteristic(this.Characteristic.Name, displayName);
+        this.acThermostat.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
+        this.acThermostat.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
+        this.acThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState).setProps({
+            minValue: this.Characteristic.CurrentHeatingCoolingState.OFF,
+            maxValue: this.Characteristic.CurrentHeatingCoolingState.COOL,
+            validValues: [
+                this.Characteristic.CurrentHeatingCoolingState.OFF,
+                this.Characteristic.CurrentHeatingCoolingState.COOL,
+            ],
+        });
+        this.acThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).setProps({
+            minValue: this.Characteristic.TargetHeatingCoolingState.OFF,
+            maxValue: this.Characteristic.TargetHeatingCoolingState.AUTO,
+            validValues: [
+                this.Characteristic.TargetHeatingCoolingState.OFF,
+                this.Characteristic.TargetHeatingCoolingState.COOL,
+                this.Characteristic.TargetHeatingCoolingState.AUTO,
+            ],
+        });
+        this.acThermostat.getCharacteristic(this.Characteristic.CurrentTemperature).setProps({
+            minValue: -20,
+            maxValue: 50,
+            minStep: 0.1,
+        });
+        this.acThermostat.getCharacteristic(this.Characteristic.TargetTemperature).setProps({
+            minValue: 17.78,
+            maxValue: 30.0,
+            minStep: 0.5,
+        });
+        this.acThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState)
+            .onGet(this.getCurrentHeatingCoolingState.bind(this));
+        this.acThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState)
+            .onGet(this.getTargetHeatingCoolingState.bind(this))
+            .onSet(this.setTargetHeatingCoolingState.bind(this));
+        this.acThermostat.getCharacteristic(this.Characteristic.CurrentTemperature)
+            .onGet(this.getCurrentTemperature.bind(this));
+        this.acThermostat.getCharacteristic(this.Characteristic.TargetTemperature)
+            .onGet(this.getTargetTemperature.bind(this))
+            .onSet(this.setTargetTemperature.bind(this));
+        this.acThermostat.getCharacteristic(this.Characteristic.TemperatureDisplayUnits)
+            .onGet(this.handleTemperatureDisplayUnitsGet.bind(this))
+            .onSet(this.handleTemperatureDisplayUnitsSet.bind(this));
+        // ── Fan service ───────────────────────────────────────────────────────────
+        const fanDisplayName = 'AC Fan Speed';
+        this.acFan = this.accessory.getService(fanDisplayName)
+            || this.accessory.addService(this.Service.Fan, fanDisplayName, 'ac-fan1');
+        this.acFan.setCharacteristic(this.Characteristic.Name, fanDisplayName);
+        this.acFan.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
+        this.acFan.setCharacteristic(this.Characteristic.ConfiguredName, fanDisplayName);
+        this.acFan.getCharacteristic(this.Characteristic.On)
+            .onGet(() => this.isOn)
+            .onSet(async (value) => {
+            await this.setTargetHeatingCoolingState(value
+                ? this.Characteristic.TargetHeatingCoolingState.COOL
+                : this.Characteristic.TargetHeatingCoolingState.OFF);
+        });
+        this.acFan.getCharacteristic(this.Characteristic.RotationSpeed)
+            .setProps({ minValue: 0, maxValue: 100, minStep: 25 })
+            .onGet(() => this.fanSpeedToPercent(this.targetFanSpeed))
+            .onSet(async (value) => {
+            this.targetFanSpeed = this.percentToFanSpeed(value);
+            await this.sendThermostatCommand(this.targetMode, this.targetCelsius, this.targetFanSpeed, this.isOn);
+        });
+        // ── Mode switches ─────────────────────────────────────────────────────────
+        const modes = [
+            { name: 'Cool', mode: 'cloud.smarthq.type.thermostatmode.cool', subtype: 'ac-mode-cool' },
+            { name: 'Eco', mode: 'cloud.smarthq.type.thermostatmode.cool.energysaver', subtype: 'ac-mode-eco' },
+            { name: 'Dry', mode: 'cloud.smarthq.type.thermostatmode.dry', subtype: 'ac-mode-dry' },
+            { name: 'Fan Only', mode: 'cloud.smarthq.type.thermostatmode.fanonly', subtype: 'ac-mode-fanonly' },
+        ];
+        for (const { name, mode, subtype } of modes) {
+            const svc = this.accessory.getService(name)
+                || this.accessory.addService(this.Service.Switch, name, subtype);
+            svc.setCharacteristic(this.Characteristic.Name, name);
+            svc.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
+            svc.setCharacteristic(this.Characteristic.ConfiguredName, name);
+            svc.getCharacteristic(this.Characteristic.On)
+                .onGet(() => this.isOn && this.targetMode === mode)
+                .onSet(async (value) => {
+                if (value) {
+                    // Switching to this mode turns the AC on and deactivates others
+                    this.isOn = true;
+                    this.targetMode = mode;
+                    await this.sendThermostatCommand(mode, this.targetCelsius, this.targetFanSpeed, true);
+                    this.updateModeSwitches(mode);
+                    // Keep thermostat tile in sync
+                    const hkMode = this.modeToHK[mode] ?? HK.COOL;
+                    this.acThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).updateValue(hkMode);
+                    this.acFan.getCharacteristic(this.Characteristic.On).updateValue(true);
+                }
+                else {
+                    // Turning off a mode switch turns the AC off entirely
+                    this.isOn = false;
+                    await this.sendThermostatCommand(this.targetMode, this.targetCelsius, this.targetFanSpeed, false);
+                    this.updateModeSwitches('');
+                    this.acThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState)
+                        .updateValue(this.Characteristic.TargetHeatingCoolingState.OFF);
+                    this.acFan.getCharacteristic(this.Characteristic.On).updateValue(false);
+                }
+            });
+            this.modeSwitches[mode] = svc;
+        }
+        // Set initial switch states
+        this.updateModeSwitches(this.isOn ? this.targetMode : '');
+        // ── Polling (every 30 s) ──────────────────────────────────────────────────
+        setInterval(() => {
+            this.getCurrentTemperature().then(temp => {
+                this.acThermostat.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(temp);
+            });
+            this.getCurrentHeatingCoolingState().then(state => {
+                const running = state === this.Characteristic.CurrentHeatingCoolingState.COOL;
+                this.acThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState).updateValue(state);
+                this.acFan.getCharacteristic(this.Characteristic.On).updateValue(running);
+                // Keep TargetHeatingCoolingState in sync with actual on/off state
+                this.acThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).updateValue(this.isOn
+                    ? (this.modeToHK[this.targetMode] ?? this.Characteristic.TargetHeatingCoolingState.COOL)
+                    : this.Characteristic.TargetHeatingCoolingState.OFF);
+            });
+        }, 30000);
+    }
+    // ── Mode switch mutual exclusion ───────────────────────────────────────────
+    updateModeSwitches(activeMode) {
+        for (const [mode, svc] of Object.entries(this.modeSwitches)) {
+            svc.getCharacteristic(this.Characteristic.On).updateValue(this.isOn && mode === activeMode);
+        }
+    }
+    // ── Fan speed helpers ──────────────────────────────────────────────────────
+    fanSpeedToPercent(fanSpeed) {
+        switch (fanSpeed) {
+            case 'cloud.smarthq.type.fanspeed.high': return 100;
+            case 'cloud.smarthq.type.fanspeed.medium': return 50;
+            case 'cloud.smarthq.type.fanspeed.low': return 25;
+            default: return 0;
+        }
+    }
+    percentToFanSpeed(percent) {
+        if (percent >= 75)
+            return 'cloud.smarthq.type.fanspeed.high';
+        if (percent >= 40)
+            return 'cloud.smarthq.type.fanspeed.medium';
+        if (percent >= 15)
+            return 'cloud.smarthq.type.fanspeed.low';
+        return 'cloud.smarthq.type.fanspeed.auto';
+    }
+    // ── Shared command helper ──────────────────────────────────────────────────
+    async sendThermostatCommand(mode, celsius, fanSpeed, on) {
+        const svc = this.findService('cloud.smarthq.service.thermostat.v1', 'cloud.smarthq.domain.thermostat');
+        if (!svc)
+            return;
+        const command = {
+            commandType: 'cloud.smarthq.command.thermostat.v1.set',
+            on,
+        };
+        // Only send mode and fanSpeed when turning on
+        if (on) {
+            command.mode = mode;
+            // Dry mode doesn't accept fanSpeed
+            const isDry = mode === 'cloud.smarthq.type.thermostatmode.dry';
+            if (!isDry) {
+                command.fanSpeed = fanSpeed;
+            }
+            // Only send coolFahrenheit for cool modes
+            const needsCoolTemp = mode === 'cloud.smarthq.type.thermostatmode.cool'
+                || mode === 'cloud.smarthq.type.thermostatmode.cool.energysaver';
+            if (needsCoolTemp) {
+                command.coolFahrenheit = Math.round(celsius * 9 / 5 + 32);
+            }
+        }
+        const cmdBody = {
+            command,
+            kind: 'service#command',
+            deviceId: this.deviceId,
+            serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+            serviceType: 'cloud.smarthq.service.thermostat.v1',
+            domainType: 'cloud.smarthq.domain.thermostat',
+        };
+        try {
+            await this.client.sendCommand(cmdBody);
+        }
+        catch (error) {
+            // handleApiError in ge-smarthq is async but callers don't await it,
+            // so the thrown value is a Promise<Error> — await it to get the real message.
+            const resolved = error instanceof Promise ? await error : error;
+            const msg = resolved instanceof Error ? resolved.message : JSON.stringify(resolved);
+            this.client.debug('Error sending AC thermostat command: ' + msg);
+        }
+    }
+    // ── Service helpers ────────────────────────────────────────────────────────
+    findService(serviceType, domainType) {
+        return this.deviceServices.find(s => s.serviceType === serviceType && s.domainType === domainType);
+    }
+    // ── Handlers ──────────────────────────────────────────────────────────────
+    async getCurrentHeatingCoolingState() {
+        const svc = this.findService('cloud.smarthq.service.toggle', 'cloud.smarthq.domain.state.compressor');
+        if (!svc)
+            return this.Characteristic.CurrentHeatingCoolingState.OFF;
+        try {
+            const response = await this.client.getServiceDetails(this.deviceId, svc.serviceId);
+            const running = response?.state?.on ?? false;
+            this.isOn = running;
+            return running
+                ? this.Characteristic.CurrentHeatingCoolingState.COOL
+                : this.Characteristic.CurrentHeatingCoolingState.OFF;
+        }
+        catch (error) {
+            this.client.debug('Error getting AC compressor state: ' + error);
+            return this.Characteristic.CurrentHeatingCoolingState.OFF;
+        }
+    }
+    getTargetHeatingCoolingState() {
+        if (!this.isOn)
+            return this.Characteristic.TargetHeatingCoolingState.OFF;
+        return this.modeToHK[this.targetMode] ?? this.Characteristic.TargetHeatingCoolingState.COOL;
+    }
+    async setTargetHeatingCoolingState(value) {
+        const hkValue = value;
+        const HK = this.Characteristic.TargetHeatingCoolingState;
+        if (hkValue === HK.OFF) {
+            this.isOn = false;
+            await this.sendThermostatCommand(this.targetMode, this.targetCelsius, this.targetFanSpeed, false);
+            this.updateModeSwitches('');
+            // Explicitly update thermostat tile to OFF
+            this.acThermostat.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).updateValue(HK.OFF);
+            return;
+        }
+        this.isOn = true;
+        const newMode = this.hkToMode[hkValue] ?? 'cloud.smarthq.type.thermostatmode.cool';
+        this.targetMode = newMode;
+        await this.sendThermostatCommand(newMode, this.targetCelsius, this.targetFanSpeed, true);
+        this.updateModeSwitches(newMode);
+    }
+    async getCurrentTemperature() {
+        const svc = this.findService('cloud.smarthq.service.temperature', 'cloud.smarthq.domain.indoor.ambient');
+        if (!svc)
+            return this.targetCelsius;
+        try {
+            const response = await this.client.getServiceDetails(this.deviceId, svc.serviceId);
+            if (response?.state?.celsiusConverted == null)
+                return this.targetCelsius;
+            return Number(response.state.celsiusConverted);
+        }
+        catch (error) {
+            this.client.debug('Error getting AC current temperature: ' + error);
+            return this.targetCelsius;
+        }
+    }
+    getTargetTemperature() {
+        return this.targetCelsius;
+    }
+    // Only send command when AC is already on — don't turn it on just by moving the temp slider
+    async setTargetTemperature(value) {
+        this.targetCelsius = value;
+        if (this.isOn) {
+            await this.sendThermostatCommand(this.targetMode, this.targetCelsius, this.targetFanSpeed, true);
+        }
+    }
+    handleTemperatureDisplayUnitsGet() {
+        return this.Characteristic.TemperatureDisplayUnits.FAHRENHEIT;
+    }
+    handleTemperatureDisplayUnitsSet(value) {
+        this.client.debug('AC Temperature Display Units set to: ' + value);
+    }
+    // authenticate() before connect() so token is valid for both
+    // sendCommand HTTP calls and the WebSocket connection
+    async setupWebSocket() {
+        try {
+            await this.client.authenticate();
+            await this.client.connect();
+        }
+        catch (error) {
+            this.client.debug('Failed to connect to SmartHQ WebSocket for AC: ' + error);
+        }
+    }
+}
+//# sourceMappingURL=airConditioner.js.map

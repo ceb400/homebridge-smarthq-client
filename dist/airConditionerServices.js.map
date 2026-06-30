@@ -1,0 +1,1 @@
+{"version":3,"file":"airConditionerServices.js","sourceRoot":"","sources":["../src/airConditionerServices.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,MAAM,oCAAoC,CAAC;AAKpE,MAAM,UAAU,2BAA2B,CAAwB,SAA4B,EAAE,cAA+B,EAAE,QAAgB;IAChJ,IAAI,cAAc,CAAC,IAAI,EAAE,SAAS,EAAE,cAAc,EAAE,QAAQ,CAAC,CAAC;AAChE,CAAC"}
