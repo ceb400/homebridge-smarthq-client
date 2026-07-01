@@ -5,6 +5,7 @@
 A homebridge plugin for GE appliances using the SmartHQ API s (Identity and Access Management API, Digital Twin API) from npm pkg 'ge-smarthq'.  The following devices are implemented:
 * refrigerator
 * dishwasher
+* air conditioner
 * Other devices will be discovered and service information could be written to the log to assist in adding support for more devices.
 
 The refrigerator services include controls for:
@@ -27,6 +28,11 @@ The dishwasher services include controls for:
 * Dry temperatures
 * Wash zones
 * Options for steam, bottlewash, silverware, sabbath mode, controls lock
+
+The air conditioner services include controls for:
+* AC temperature
+* AC fan speed
+* AC modes (Cool, ECO, Dry, Fan Only)
 
 
 
