@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.2) (2026-07-02)
+- Bug fix for device discovery (checking device.nickname includes substring)
+
+## What's Changed
 ## [1.2.0](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.0) (2026-07-01)
 - Added initial support for air conditioner
 - minor bug fixes to correct invalid name error
