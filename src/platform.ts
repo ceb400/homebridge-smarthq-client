@@ -47,7 +47,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       try {
         this.debug('red', '(SmartHQ OAuth2 authentication starting)');
         await this.client.authenticate();
-        this.debug('blue', '(SmartHQ OAuth2 authentication completed)');
+        this.debug('blue', '(SmartHQ OAuth2 authentication succeeded)');
       } catch (error) {
           this.log.error(chalk.red('SmartHQ OAuth2 authentication failed:'), error);
       }
@@ -119,15 +119,23 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
           this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
           setupRefrigeratorServices.call(this, accessoryType!,  deviceServices, device.deviceId);
           break;
+
         case 'Dishwasher':
           this.debug('blue', `Setting up Dishwasher services for ${device.nickname}`);
           setupDishwasherServices.call(this, accessoryType!,  deviceServices, device.deviceId, this.groupAccessoryArray);
           break;
+
         case 'Air Conditioner':
           this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
           setupAirConditionerServices.call(this, accessoryType!, deviceServices, device.deviceId);
           break;
+
+        case 'Livingroom AC':
+          this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
+          setupAirConditionerServices.call(this, accessoryType!, deviceServices, device.deviceId);
+          break;
         default:
+
           this.debug('red', `not implemented device :  for device ${device.nickname}`);
       }
     }
