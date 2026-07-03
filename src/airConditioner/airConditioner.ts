@@ -112,9 +112,6 @@ export class AirConditioner {
             return;
           }
 
-          const old = this.targetFanSpeed;
-
-          // Only update internal state if this was a user-driven change
          const old = this.targetFanSpeed;
 
             // Only update internal state if this was a user-driven change
