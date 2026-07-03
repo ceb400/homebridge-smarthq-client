@@ -91,19 +91,15 @@ export class AirConditioner {
           this.updateModeSwitches(this.targetMode);
         }
 
-        // FAN SPEED SYNC LOGIC (UPDATED)
-        if (message.state?.fanSpeed !== undefined) {
+          // FAN SPEED SYNC LOGIC (UPDATED)
+        if (message.state?.fanSpeed != null) {
 
-           if (message.state?.fanSpeed == null) return;
+          const incoming = message.state.fanSpeed as string;
 
-              const incoming = message.state.fanSpeed as string;
-
-              if (incoming === this.targetFanSpeed) return;
+          if (incoming === this.targetFanSpeed) return;
 
           const incomingPercent = this.fanSpeedToPercent(incoming);
-
           const currentPercent = this.fanSpeedToPercent(this.targetFanSpeed);
-
           const delta = Math.abs(incomingPercent - currentPercent);
 
           // Only treat small changes during ECO/AUTO as noise
@@ -111,40 +107,33 @@ export class AirConditioner {
             this.targetFanSpeed === 'cloud.smarthq.type.fanspeed.auto' ||
             this.modeToHK[this.targetMode] === this.Characteristic.TargetHeatingCoolingState.AUTO;
 
-          // If this was NOT user initiated and looks like automatic adjustment, ignore it
+          // Ignore automatic ECO/AUTO drift unless user changed it
           if (this.fanIntent !== 'user' && isEcoOrAuto && delta < 15) {
             return;
           }
 
           const old = this.targetFanSpeed;
 
-          // Only update internal state if this was NOT an automatic ECO/AUTO adjustment
+          // Only update internal state if this was a user-driven change
           if (this.fanIntent === 'user') {
-          this.targetFanSpeed = incoming;
+            this.targetFanSpeed = incoming;
           }
 
           this.acFan
             .getCharacteristic(this.Characteristic.RotationSpeed)
             .updateValue(incomingPercent);
 
-          // ensure HomeKit switch state stays consistent
-          this.acFan.getCharacteristic(this.Characteristic.On).updateValue(this.isOn);
+          this.acFan
+            .getCharacteristic(this.Characteristic.On)
+            .updateValue(this.isOn);
 
-          // reset intent after a confirmed device sync
+          // reset intent after confirmed sync
+          this.fanIntent = 'device';
+
           if (delta >= 15 || this.fanIntent === 'user') {
-
-          this.client.debug(`FanSpeed synced: ${old} → ${incoming}`);
+            this.client.debug(`FanSpeed synced: ${old} → ${incoming}`);
+          }
         }
-      }
-
-      if (message.domainType === 'cloud.smarthq.domain.state.compressor') {
-        const running = message.state?.on as boolean;
-        const currentState = running
-          ? this.Characteristic.CurrentHeatingCoolingState.COOL
-          : this.Characteristic.CurrentHeatingCoolingState.OFF;
-        this.acThermostat.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState).updateValue(currentState);
-      }
-    });
 
     // ── Accessory information ────────────────────────────────────────────────
     this.accessory.getService(this.Service.AccessoryInformation)!
