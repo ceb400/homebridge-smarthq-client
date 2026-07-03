@@ -99,15 +99,15 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
         }
       }
 
-      const accessoryType = this.getAccessoryByDeviceId(device, '', device.nickname); // main accessory for device
+      const accessoryType = this.getAccessoryByDeviceId(device,'',`${device.nickname} (${device.deviceId})`); // main accessory for device
 
       // For dishwasher create group accessory for wash mode, wash temp, dry levels
       if (device.nickname === 'Dishwasher') {
         this.debug('blue', `Creating group accessory for dishwasher modes for device ${device.nickname}`);
-        const groupTemperatureUuid =  this.getAccessoryByDeviceId(device, 'tempmodes', 'Wash Temps');
-        const groupDryerUuid =        this.getAccessoryByDeviceId(device, 'drymodes', 'Dry Levels');
-        const groupZoneUuid =        this.getAccessoryByDeviceId(device, 'zonemodes', 'Wash Zones');
-        const groupPresetsUuid =      this.getAccessoryByDeviceId(device, 'washmodes', 'Preset Modes');
+        const groupTemperatureUuid =  this.getAccessoryByDeviceId(device, 'tempmodes-${device.deviceId}', 'Wash Temps');
+        const groupDryerUuid =        this.getAccessoryByDeviceId(device, 'drymodes-${device.deviceId}', 'Dry Levels');
+        const groupZoneUuid =        this.getAccessoryByDeviceId(device, 'zonemodes-${device.deviceId}', 'Wash Zones');
+        const groupPresetsUuid =      this.getAccessoryByDeviceId(device, 'washmodes-${device.deviceId}', 'Preset Modes');
         this.groupAccessoryArray = [groupTemperatureUuid!, groupDryerUuid!, groupZoneUuid!, groupPresetsUuid!];
       }
 
@@ -171,9 +171,9 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
     let uuid: string;
     let anAccessory: PlatformAccessory | undefined;
     if (!uuidSuffix) {
-      uuid = this.api.hap.uuid.generate(device.deviceId);
+      uuid = this.api.hap.uuid.generate(`smarthq-${device.deviceId}`);
     } else {
-      uuid = this.api.hap.uuid.generate(device.deviceId + '-' + uuidSuffix);
+       uuid = this.api.hap.uuid.generate(`smarthq-${device.deviceId}-${uuidSuffix}`);
     }
     const existingAccessory = this.accessories.get(uuid);
 
@@ -183,6 +183,12 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       existingAccessory.context.device = device;
       anAccessory = existingAccessory;
       this.api.updatePlatformAccessories([existingAccessory]);
+      existingAccessory.context.device = device;
+
+      // IMPORTANT: ensure each accessory instance is re-bound correctly
+      existingAccessory.services.forEach(service => {
+        service.setCharacteristic(this.api.hap.Characteristic.Name,`${service.displayName} (${device.deviceId})`);
+      });
     } else {
     // create new accessory
       this.log.info('Adding new accessory:', device.nickname);
@@ -191,8 +197,9 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       accessory.context.device = device;
       anAccessory = accessory;
       this.log.info('Registering new accessory with Homebridge:', accessory.displayName); 
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]); 
-    }
+      if (!this.accessories.has(uuid)) {
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+}
     this.discoveredCacheUUIDs.push(uuid);
   return anAccessory;
   }
