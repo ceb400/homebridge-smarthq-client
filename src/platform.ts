@@ -168,41 +168,51 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
   }
 
   getAccessoryByDeviceId(device: Device, uuidSuffix: string, displayName: string): PlatformAccessory | undefined {
-    let uuid: string;
-    let anAccessory: PlatformAccessory | undefined;
-    if (!uuidSuffix) {
-      uuid = this.api.hap.uuid.generate(`smarthq-${device.deviceId}`);
-    } else {
-       uuid = this.api.hap.uuid.generate(`smarthq-${device.deviceId}-${uuidSuffix}`);
-    }
-    const existingAccessory = this.accessories.get(uuid);
+        let uuid: string;
 
-    // for existing accessories restore from cache
-    if (existingAccessory) {
-      this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-      existingAccessory.context.device = device;
-      anAccessory = existingAccessory;
-      this.api.updatePlatformAccessories([existingAccessory]);
-      existingAccessory.context.device = device;
+        if (!uuidSuffix) {
+          uuid = this.api.hap.uuid.generate(`smarthq-${device.deviceId}`);
+        } else {
+          uuid = this.api.hap.uuid.generate(`smarthq-${device.deviceId}-${uuidSuffix}`);
+        }
 
-      // IMPORTANT: ensure each accessory instance is re-bound correctly
-      existingAccessory.services.forEach(service => {
-        service.setCharacteristic(this.api.hap.Characteristic.Name,`${service.displayName} (${device.deviceId})`);
-      });
-    } else {
-    // create new accessory
-      this.log.info('Adding new accessory:', device.nickname);
-      const accessory = new this.api.platformAccessory(displayName, uuid);
-
-      accessory.context.device = device;
-      anAccessory = accessory;
-      this.log.info('Registering new accessory with Homebridge:', accessory.displayName); 
-      if (!this.accessories.has(uuid)) {
+        const existingAccessory = this.accessories.get(uuid);
+      
+        // ─────────────────────────────────────────────
+        // RESTORE EXISTING ACCESSORY FROM CACHE
+        // ─────────────────────────────────────────────
+        if (existingAccessory) {
+          this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+      
+          // Always refresh device context
+          existingAccessory.context.device = device;
+      
+          // IMPORTANT:
+          // Do NOT mutate service names or characteristics globally here.
+          // It can cause cross-device UI bleeding in HomeKit.
+          this.api.updatePlatformAccessories([existingAccessory]);
+      
+          return existingAccessory;
+        }
+      
+        // ─────────────────────────────────────────────
+        // CREATE NEW ACCESSORY
+        // ─────────────────────────────────────────────
+        this.log.info('Adding new accessory:', displayName);
+      
+        const accessory = new this.api.platformAccessory(displayName, uuid);
+      
+        accessory.context.device = device;
+      
+        this.log.info('Registering new accessory with Homebridge:', accessory.displayName);
+      
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-}
-    this.discoveredCacheUUIDs.push(uuid);
-  return anAccessory;
-  }
+      
+        this.accessories.set(uuid, accessory);
+        this.discoveredCacheUUIDs.push(uuid);
+      
+        return accessory;
+      }
 
 
   public debug(color: string, message: string) {
