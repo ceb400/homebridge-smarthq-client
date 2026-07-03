@@ -57,14 +57,14 @@ export class AirConditioner {
       'cloud.smarthq.type.thermostatmode.cool': HK.COOL,
       'cloud.smarthq.type.thermostatmode.cool.energysaver': HK.AUTO,
       'cloud.smarthq.type.thermostatmode.fanonly': HK.OFF,
-      'cloud.smarthq.type.thermostatmode.dry': HK.COOL,
+      'cloud.smarthq.type.thermostatmode.dry': HK.HEAT,
     };
 
     this.hkToMode = {
       [HK.OFF]: 'cloud.smarthq.type.thermostatmode.fanonly',
       [HK.COOL]: 'cloud.smarthq.type.thermostatmode.cool',
       [HK.AUTO]: 'cloud.smarthq.type.thermostatmode.cool.energysaver',
-      [HK.HEAT]: 'cloud.smarthq.type.thermostatmode.cool',
+      [HK.HEAT]: 'cloud.smarthq.type.thermostatmode.dry',
     };
 
     // Load initial state if available
