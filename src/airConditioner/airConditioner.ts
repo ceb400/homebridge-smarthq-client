@@ -115,23 +115,29 @@ export class AirConditioner {
           const old = this.targetFanSpeed;
 
           // Only update internal state if this was a user-driven change
-          if (this.fanIntent === 'user') {
-            this.targetFanSpeed = incoming;
-          }
+         const old = this.targetFanSpeed;
 
-          this.acFan
-            .getCharacteristic(this.Characteristic.RotationSpeed)
-            .updateValue(incomingPercent);
-
-          this.acFan
-            .getCharacteristic(this.Characteristic.On)
-            .updateValue(this.isOn);
-
-          // reset intent after confirmed sync
-          this.fanIntent = 'device';
-
-          if (delta >= 15 || this.fanIntent === 'user') {
-            this.client.debug(`FanSpeed synced: ${old} → ${incoming}`);
+            // Only update internal state if this was a user-driven change
+            if (this.fanIntent === 'user') {
+              this.targetFanSpeed = incoming;
+            }
+            
+            this.acFan
+              .getCharacteristic(this.Characteristic.RotationSpeed)
+              .updateValue(incomingPercent);
+            
+            this.acFan
+              .getCharacteristic(this.Characteristic.On)
+              .updateValue(this.isOn);
+            
+            // capture intent BEFORE resetting it
+            const wasUserIntent = this.fanIntent === 'user';
+            
+            // reset intent after confirmed sync
+            this.fanIntent = 'device';
+            
+            if (delta >= 15 || wasUserIntent) {
+              this.client.debug(`FanSpeed synced: ${old} → ${incoming}`);
           }
         }
 
