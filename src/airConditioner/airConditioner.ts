@@ -94,13 +94,15 @@ export class AirConditioner {
         // FAN SPEED SYNC LOGIC (UPDATED)
         if (message.state?.fanSpeed !== undefined) {
 
-          const incoming = message.state.fanSpeed as string;
+           if (message.state?.fanSpeed == null) return;
+
+              const incoming = message.state.fanSpeed as string;
+
+              if (incoming === this.targetFanSpeed) return;
 
           const incomingPercent = this.fanSpeedToPercent(incoming);
 
-          const currentPercent =
-            (this.acFan.getCharacteristic(this.Characteristic.RotationSpeed).value as number)
-            ?? this.fanSpeedToPercent(this.targetFanSpeed);
+          const currentPercent = this.fanSpeedToPercent(this.targetFanSpeed);
 
           const delta = Math.abs(incomingPercent - currentPercent);
 
@@ -116,7 +118,10 @@ export class AirConditioner {
 
           const old = this.targetFanSpeed;
 
+          // Only update internal state if this was NOT an automatic ECO/AUTO adjustment
+          if (this.fanIntent === 'user') {
           this.targetFanSpeed = incoming;
+          }
 
           this.acFan
             .getCharacteristic(this.Characteristic.RotationSpeed)
@@ -126,7 +131,7 @@ export class AirConditioner {
           this.acFan.getCharacteristic(this.Characteristic.On).updateValue(this.isOn);
 
           // reset intent after a confirmed device sync
-          this.fanIntent = 'device';
+          if (delta >= 15 || this.fanIntent === 'user') {
 
           this.client.debug(`FanSpeed synced: ${old} → ${incoming}`);
         }
