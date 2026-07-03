@@ -135,6 +135,8 @@ export class AirConditioner {
           }
         }
 
+      }
+    });
     // ── Accessory information ────────────────────────────────────────────────
     this.accessory.getService(this.Service.AccessoryInformation)!
       .setCharacteristic(this.Characteristic.Manufacturer,  'GE')
@@ -307,7 +309,7 @@ export class AirConditioner {
         );
       });
     }, 30000);
-  }
+    }
 
   // ── Mode switch mutual exclusion ───────────────────────────────────────────
 
