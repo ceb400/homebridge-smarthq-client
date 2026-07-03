@@ -1,7 +1,7 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
 import { SmartHQClient, DeviceService } from 'ge-smarthq';
-import { SmartHqPlatform }              from '../platform.js';
-import { ServiceMessage }               from '../index.js';
+import { SmartHqPlatform } from '../platform.js';
+import { ServiceMessage } from '../index.js';
 
 export class AirConditioner {
   private targetCelsius = 22.22;
@@ -121,7 +121,7 @@ export class AirConditioner {
 
         if (incoming === 'cloud.smarthq.type.fanspeed.auto') {
           this.targetFanState = 'AUTO';
-          this.targetFanSpeed = 'cloud.smarthq.type.fanspeed.auto';
+          this.targetFanSpeed = incoming;
 
           this.acFan?.getCharacteristic(this.Characteristic.TargetFanState)
             ?.updateValue(this.Characteristic.TargetFanState.AUTO);
@@ -129,7 +129,6 @@ export class AirConditioner {
           return;
         }
 
-        // device forces MANUAL when non-auto
         this.targetFanState = 'MANUAL';
         this.targetFanSpeed = incoming;
         this.lastManualFanSpeed = incoming;
@@ -148,6 +147,7 @@ export class AirConditioner {
       .setCharacteristic(this.Characteristic.SerialNumber, accessory.context.device.serial || 'Default-Serial');
 
     const displayName = 'Air Conditioner';
+
     this.acThermostat = this.accessory.getService(displayName)
       || this.accessory.addService(this.Service.Thermostat, displayName, 'ac-thermo1');
 
@@ -162,6 +162,7 @@ export class AirConditioner {
       .onSet(this.setTargetTemperature.bind(this));
 
     const fanDisplayName = 'AC Fan Speed';
+
     this.acFan = this.accessory.getService(fanDisplayName)
       || this.accessory.addService(this.Service.Fan, fanDisplayName, 'ac-fan1');
 
@@ -206,7 +207,6 @@ export class AirConditioner {
       .onGet(() => this.fanSpeedToPercent(this.targetFanSpeed))
       .onSet(async (value: CharacteristicValue) => {
         this.targetFanState = 'MANUAL';
-
         this.targetFanSpeed = this.percentToFanSpeed(value as number);
         this.lastManualFanSpeed = this.targetFanSpeed;
 
@@ -221,13 +221,17 @@ export class AirConditioner {
     this.updateModeSwitches(this.isOn ? this.targetMode : '');
 
     setInterval(() => {
-      this.getCurrentTemperature().then(temp => {
-        this.acThermostat.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(temp);
+      this.getCurrentTemperature().then((temp: number) => {
+        this.acThermostat.getCharacteristic(this.Characteristic.CurrentTemperature)
+          .updateValue(temp);
       });
 
-      this.getCurrentHeatingCoolingState().then(state => {
-        const running = state === this.Characteristic.CurrentHeatingCoolingState.COOL;
-        this.acFan.getCharacteristic(this.Characteristic.On).updateValue(running);
+      this.getCurrentHeatingCoolingState().then((state: number) => {
+        const running =
+          state === this.Characteristic.CurrentHeatingCoolingState.COOL;
+
+        this.acFan.getCharacteristic(this.Characteristic.On)
+          .updateValue(running);
       });
     }, 30000);
   }
@@ -298,8 +302,8 @@ export class AirConditioner {
   }
 
   async getCurrentHeatingCoolingState(): Promise<number> {
-  return this.getTargetHeatingCoolingState();
-}
+    return this.getTargetHeatingCoolingState();
+  }
 
   async getTargetHeatingCoolingState(): Promise<number> {
     return this.isOn
@@ -312,15 +316,28 @@ export class AirConditioner {
 
     if (value === HK.OFF) {
       this.isOn = false;
-      await this.sendThermostatCommand(this.targetMode, this.targetCelsius, this.targetFanSpeed, false);
+      await this.sendThermostatCommand(
+        this.targetMode,
+        this.targetCelsius,
+        this.targetFanSpeed,
+        false,
+      );
       return;
     }
 
     this.isOn = true;
-    const newMode = this.hkToMode[value as number] ?? 'cloud.smarthq.type.thermostatmode.cool';
+    const newMode =
+      this.hkToMode[value as number] ??
+      'cloud.smarthq.type.thermostatmode.cool';
+
     this.targetMode = newMode;
 
-    await this.sendThermostatCommand(newMode, this.targetCelsius, this.targetFanSpeed, true);
+    await this.sendThermostatCommand(
+      newMode,
+      this.targetCelsius,
+      this.targetFanSpeed,
+      true,
+    );
   }
 
   getTargetTemperature(): number {
@@ -328,13 +345,19 @@ export class AirConditioner {
   }
 
   async getCurrentTemperature(): Promise<number> {
-  return this.getTargetTemperature();
-}
+    return this.getTargetTemperature();
+  }
 
   async setTargetTemperature(value: CharacteristicValue) {
     this.targetCelsius = value as number;
+
     if (this.isOn) {
-      await this.sendThermostatCommand(this.targetMode, this.targetCelsius, this.targetFanSpeed, true);
+      await this.sendThermostatCommand(
+        this.targetMode,
+        this.targetCelsius,
+        this.targetFanSpeed,
+        true,
+      );
     }
   }
 
