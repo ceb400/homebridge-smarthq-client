@@ -297,6 +297,10 @@ export class AirConditioner {
     );
   }
 
+  async getCurrentHeatingCoolingState(): Promise<number> {
+  return this.getTargetHeatingCoolingState();
+}
+
   async getTargetHeatingCoolingState(): Promise<number> {
     return this.isOn
       ? this.modeToHK[this.targetMode] ?? this.Characteristic.TargetHeatingCoolingState.COOL
@@ -322,6 +326,10 @@ export class AirConditioner {
   getTargetTemperature(): number {
     return this.targetCelsius;
   }
+
+  async getCurrentTemperature(): Promise<number> {
+  return this.getTargetTemperature();
+}
 
   async setTargetTemperature(value: CharacteristicValue) {
     this.targetCelsius = value as number;
