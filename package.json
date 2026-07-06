@@ -1,6 +1,6 @@
 {
   "name": "homebridge-smarthq-client",
-  "version": "1.2.2",
+  "version": "1.2.2-beta.0",
   "private": false,
   "description": "Plugin for controlling GE refrigerator and dishwasher via SmartHQ API.",
   "keywords": [
@@ -33,6 +33,7 @@
     "build": "npm run lint && rimraf ./dist && tsc",
     "lint": "eslint . --max-warnings=0",
     "prepublishOnly": "npm run lint && npm run build",
+    "pub": "npm version patch --force && npm publish",
     "watch": "npm run build && npm link && nodemon"
   },
   "dependencies": {
