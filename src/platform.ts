@@ -7,6 +7,7 @@ import chalk              from 'chalk';
 // GE Devices
 import { setupDishwasherServices }     from './dishwasherServices.js';
 import { setupRefrigeratorServices }   from './refrigeratorServices.js';
+import { setupAirConditionerServices } from './airConditionerServices.js';
 
 export class SmartHqPlatform implements DynamicPlatformPlugin {
   private client: SmartHQClient;
@@ -46,7 +47,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       try {
         this.debug('red', '(SmartHQ OAuth2 authentication starting)');
         await this.client.authenticate();
-        this.debug('blue', '(SmartHQ OAuth2 authentication completed)');
+        this.debug('blue', '(SmartHQ OAuth2 authentication succeeded)');
       } catch (error) {
           this.log.error(chalk.red('SmartHQ OAuth2 authentication failed:'), error);
       }
@@ -84,7 +85,8 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
 
       if (this.config.debugServicesFridge && device.nickname === 'Refrigerator' 
         || this.config.debugServicesDishwasher && device.nickname === 'Dishwasher'
-        || this.config.debugServicesAll) {
+        || this.config.debugServicesAll
+        || device.nickname === 'Air Conditioner') {
         for (const service of sortedServices) {
             this.log.info(chalk.yellow("ServiceId         = " + service.serviceId));
             this.log.info(chalk.yellow("ServiceDeviceType = " + service.serviceDeviceType));
@@ -111,17 +113,31 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
 
       // Setup services based on device type when there are multiple device types in account
       // add more case statements e.g. Washer, Dryer, Oven, etc.
+      const value = device.nickname;
 
-      switch (device.nickname) {
-        case 'Refrigerator':
+      switch (true) {
+        case value.includes('Refrigerator'):
           this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
           setupRefrigeratorServices.call(this, accessoryType!,  deviceServices, device.deviceId);
           break;
-        case 'Dishwasher':
+
+        case value.includes('Dishwasher'):
           this.debug('blue', `Setting up Dishwasher services for ${device.nickname}`);
           setupDishwasherServices.call(this, accessoryType!,  deviceServices, device.deviceId, this.groupAccessoryArray);
           break;
+
+        case value.includes('Air Conditioner'):
+          this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
+          setupAirConditionerServices.call(this, accessoryType!, deviceServices, device.deviceId);
+          break;
+
+        case value.includes('AC'):
+          this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
+          setupAirConditionerServices.call(this, accessoryType!, deviceServices, device.deviceId);
+          break;
+
         default:
+
           this.debug('red', `not implemented device :  for device ${device.nickname}`);
       }
     }

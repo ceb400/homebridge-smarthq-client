@@ -230,10 +230,10 @@ export class Dishwasher {
     //=====================================================================================
     // create a new Lightbulb service for the Cycle % Done
     //=====================================================================================
-    displayName = "Cycle % Done";
+    displayName = "Cycle Pct Done";
     const cyclePct =
       this.accessory.getService(displayName) ||
-      this.accessory.addService(this.Service.Lightbulb, displayName, "cycle-done-2");
+      this.accessory.addService(this.Service.Lightbulb, displayName, "cycle-done-3");
 
     cyclePct.setCharacteristic(this.Characteristic.Name, displayName);
     cyclePct.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
@@ -912,6 +912,10 @@ export class Dishwasher {
     accessory: PlatformAccessory,
   ) {
     let service: Service;
+
+    if (displayName === "1") {
+      displayName = "1 Hour";
+    }
     this.client.debug(chalk.blue("Setting up  " + serviceType + " for " + displayName));
 
     switch (serviceType) {

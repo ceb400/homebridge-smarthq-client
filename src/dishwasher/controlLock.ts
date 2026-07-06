@@ -146,8 +146,12 @@ export class ControlLock {
         this.client.debug("No response from setcontrolsLock command");
         return;
       }
-    } catch (error) {
-      this.client.debug("Error sending setcontrolsLock command: " + error);
+    } catch (error: unknown) {
+      // handleApiError in ge-smarthq is async but callers don't await it,
+      // so the thrown value is a Promise<Error> — await it to get the real message.
+      const resolved = error instanceof Promise ? await error : error;
+      const msg = resolved instanceof Error ? resolved.message : JSON.stringify(resolved);
+      this.client.debug("Error sending setcontrolsLock command: " + msg);
     }
   }
 }
