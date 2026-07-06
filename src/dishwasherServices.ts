@@ -9,7 +9,7 @@ import { SabbathMode }        from './dishwasher/sabbathMode.js';
 import { SoundOption }        from './dishwasher/soundOption.js';
 import { PlatformAccessory }  from 'homebridge';
 import { SmartHqPlatform }    from './platform.js';
-import { DeviceService }      from 'ge-smarthq';
+import { DeviceService }      from 'ge-smarthq-api';
 
 
   export function setupDishwasherServices(this: SmartHqPlatform, accessory: PlatformAccessory, deviceServices: DeviceService[], deviceId: string, groupAccessory?: PlatformAccessory[]) {

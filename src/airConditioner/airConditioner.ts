@@ -6,7 +6,7 @@ import {
   Characteristic,
 } from 'homebridge';
 
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 import { ServiceMessage } from '../index.js';
 

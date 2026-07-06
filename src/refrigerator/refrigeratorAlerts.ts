@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService, AlertMessage, PresenceMessage } from 'ge-smarthq';
+import { SmartHQClient, DeviceService, AlertMessage, PresenceMessage } from 'ge-smarthq-api';
 import { SmartHqPlatform }              from '../platform.js';
 
 /**

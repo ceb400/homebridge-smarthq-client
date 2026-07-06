@@ -8,7 +8,7 @@ import {
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
 
-import { Device, SmartHQClient } from 'ge-smarthq';
+import { Device, SmartHQClient } from 'ge-smarthq-api';
 import chalk from 'chalk';
 
 // GE Devices
