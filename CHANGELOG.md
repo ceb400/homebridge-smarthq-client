@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.5](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-08)
+- Air conditioner updates to prevent device from triggering unwanted services
+- Changed device discovery to use device type instead of device nickname
+
 ## [1.2.2](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.2) (2026-07-02)
 - Bug fix for device discovery (checking device.nickname includes substring)
 

@@ -91,11 +91,11 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       const deviceList = await this.client.getDevices();
 
       for (const device of deviceList.devices) {
-        this.log.info(
-          chalk.yellow(
-            `SmartHQ Discovered device: ${device.nickname} Model: ${device.model}`,
-          ),
-        );
+          this.log.info(
+            chalk.yellow(
+              `SmartHQ Discovered device: ${device.nickname} Model: ${device.model} Type: ${device.deviceType}`
+            ),
+          );
 
         const response = await this.client.getDevice(device.deviceId);
         const deviceServices = response.services ?? [];
@@ -107,10 +107,10 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
         });
 
         if (
-          (this.config.debugServicesFridge && device.nickname === 'Refrigerator') ||
-          (this.config.debugServicesDishwasher && device.nickname === 'Dishwasher') ||
+          (this.config.debugServicesFridge && device.deviceType === 'cloud.smarthq.device.refrigerator') ||
+          (this.config.debugServicesDishwasher && device.deviceType === 'cloud.smarthq.device.dishwasher') ||
           this.config.debugServicesAll ||
-          device.nickname === 'Air Conditioner'
+          device.deviceType === 'cloud.smarthq.device.airconditioner'
         ) {
           for (const service of sortedServices) {
             this.log.info(chalk.yellow('ServiceId         = ' + service.serviceId));
@@ -127,7 +127,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
         );
 
         // Dishwasher group accessories
-        if (device.nickname === 'Dishwasher') {
+        if (device.deviceType === 'cloud.smarthq.device.dishwasher') {
           this.debug(
             'blue',
             `Creating group accessory for dishwasher modes for device ${device.nickname}`,
@@ -165,15 +165,13 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
           ];
         }
 
-        const value = device.nickname;
-
-        switch (true) {
-          case value.includes('Refrigerator'):
+        switch (device.deviceType) {
+          case 'cloud.smarthq.device.refrigerator':
             this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
             setupRefrigeratorServices.call(this, accessoryType!, deviceServices, device.deviceId);
             break;
 
-          case value.includes('Dishwasher'):
+          case 'cloud.smarthq.device.dishwasher':
             this.debug('blue', `Setting up Dishwasher services for ${device.nickname}`);
             setupDishwasherServices.call(
               this,
@@ -184,8 +182,8 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
             );
             break;
 
-          case value.includes('Air Conditioner'):
-          case value.includes('AC'):
+          case 'cloud.smarthq.device.airconditioner':
+
             this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
             setupAirConditionerServices.call(
               this,
