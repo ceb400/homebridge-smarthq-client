@@ -61,7 +61,7 @@ export class TurboCoolMode {
     let displayName = "Turbo Cool Fridge"; 
 
     const turboCoolFridge = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'turbo-cool-123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-turbo-cool-fridge`);
     turboCoolFridge.setCharacteristic(this.Characteristic.Name, displayName);
 
     turboCoolFridge.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
@@ -77,7 +77,7 @@ export class TurboCoolMode {
     displayName = "Turbo Cool Freezer"; 
 
     const turboCoolFreezer = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'turbo-cool-freezer-123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-turbo-cool-freezer`);
     turboCoolFreezer.setCharacteristic(this.Characteristic.Name, displayName);
 
     turboCoolFreezer.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

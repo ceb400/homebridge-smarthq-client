@@ -54,7 +54,7 @@ export class InteriorLight {
     //=====================================================================================
     const displayName = "Fridge Light"; 
     const refrigeratorLight = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Lightbulb, displayName, 'brightness-light-2');
+    || this.accessory.addService(this.Service.Lightbulb, displayName,  `${this.deviceId}-fridgelight`);
     
     refrigeratorLight.setCharacteristic(this.Characteristic.Name,  displayName);
     refrigeratorLight.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

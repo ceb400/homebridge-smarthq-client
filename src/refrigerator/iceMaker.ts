@@ -41,7 +41,7 @@ export class IceMaker {
     const displayName = "Ice Maker"; 
 
     const iceMaker = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'ice-maker-123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-icemaker1`);
     iceMaker.setCharacteristic(this.Characteristic.Name, displayName);
 
     iceMaker.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

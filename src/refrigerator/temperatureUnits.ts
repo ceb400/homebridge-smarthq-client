@@ -57,7 +57,7 @@ export class TemperatureUnits {
     let displayName = "Units: Celsius"; 
 
     const unitsCelsius = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'units-celsius-123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-unitscelsius`);
     unitsCelsius.setCharacteristic(this.Characteristic.Name, displayName);
 
     unitsCelsius.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
@@ -71,7 +71,7 @@ export class TemperatureUnits {
     displayName = "Units: Fahrenheit"; 
 
     const unitsFahrenheit = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'units-fahrenheit-123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-unitsfahrenheit`);
     unitsFahrenheit.setCharacteristic(this.Characteristic.Name, displayName);
     unitsFahrenheit.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     unitsFahrenheit.setCharacteristic(this.Characteristic.ConfiguredName, displayName)

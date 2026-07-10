@@ -88,7 +88,7 @@ export class RefrigeratorAlerts {
     //=====================================================================================
     let displayName = "Alert Door"; 
     const alertDoor = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-alertdoor`);
     
     alertDoor.setCharacteristic(this.Characteristic.Name,  displayName);
     alertDoor.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
@@ -99,7 +99,7 @@ export class RefrigeratorAlerts {
 
     displayName = "Alert Temp"; 
     const alertTemp = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-alerttemp`);
     
     alertTemp.setCharacteristic(this.Characteristic.Name,  displayName);
     alertTemp.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
@@ -110,7 +110,7 @@ export class RefrigeratorAlerts {
 
     displayName = "Alert Leak"; 
     const alertLeak = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-alertleak`);
     
     alertLeak.setCharacteristic(this.Characteristic.Name,  displayName);
     alertLeak.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
@@ -121,7 +121,7 @@ export class RefrigeratorAlerts {
 
     displayName = "Alert Filter"; 
     const alertFilter = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-alertfilter`);
     
     alertFilter.setCharacteristic(this.Characteristic.Name,  displayName);
     alertFilter.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
@@ -132,7 +132,7 @@ export class RefrigeratorAlerts {
 
     displayName = "Alert Firm"; 
     const alertFirm = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, displayName);
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-alertfirm`);
     
     alertFirm.setCharacteristic(this.Characteristic.Name,  displayName);
     alertFirm.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

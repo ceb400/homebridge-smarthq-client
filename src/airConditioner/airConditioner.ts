@@ -67,6 +67,7 @@ export class AirConditioner {
       [HK.HEAT]: 'cloud.smarthq.type.thermostatmode.dry',
     };
 
+    
     // Load initial state if available
     const thermoSvc = this.findService(
       'cloud.smarthq.service.thermostat.v1',
@@ -100,6 +101,7 @@ export class AirConditioner {
     }
 
     this.setupAccessories();
+    this.displayThermostat();  //debug to see if we can get the AC state
     this.setupWebSocket();
 
     this.client.on('service_update', (message: ServiceMessage) => {
@@ -118,6 +120,7 @@ export class AirConditioner {
   // ---------------------------
 
   private setupAccessories() {
+  
     const info = this.accessory.getService(this.Service.AccessoryInformation)!;
 
     info
@@ -174,7 +177,34 @@ export class AirConditioner {
       .onGet(() => this.fanAuto)
       .onSet(this.setFanAuto.bind(this));
   }
+  private async displayThermostat(): Promise<CharacteristicValue> {
+    //Temporary debug to see if we can get the AC state
+     for (const service of this.deviceServices) {
+      if (
+        service.serviceDeviceType === "cloud.smarthq.device.airconditioner" &&
+        service.serviceType === "cloud.smarthq.service.thermostat.state.v1" &&
+        service.domainType === "cloud.smarthq.domain.thermostat"
+      ) {
+        try {
+          const response = await this.client.getServiceDetails(
+            this.deviceId,
+            service.serviceId,
+          );
 
+          if (response?.state == null) {
+            this.client.debug("No response from gettest command");
+            return false;
+          }
+          this.client.debug('AC state response: ' + JSON.stringify(response, null, 2));
+          break;
+        } catch (error) {
+          this.client.debug("Error getting test: " + error);
+          return false;
+        }
+      }
+    }
+    return true;
+  } //End temporary debug
   // ---------------------------
   // FAN LOGIC
   // ---------------------------

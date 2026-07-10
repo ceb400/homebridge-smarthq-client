@@ -60,7 +60,7 @@ export class ControlLock {
     const displayName = "Controls Lock"; 
 
     const controlsLock = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'control-lock-123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-controllock`);
     controlsLock.setCharacteristic(this.Characteristic.Name, displayName);
 
     controlsLock.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

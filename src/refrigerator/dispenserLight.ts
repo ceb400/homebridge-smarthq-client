@@ -60,7 +60,7 @@ constructor(
     const displayName = "Dispenser Light"; 
 
     const dispenserLight = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'dispenser-light-123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-dispenserlight`);
     dispenserLight.setCharacteristic(this.Characteristic.Name, displayName);
 
     dispenserLight.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

@@ -75,14 +75,14 @@ export class ConvertibleDrawer {
     let displayName = "Drawer Meat";
 
     const convertibleDrawerMeat = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-3');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-mode-3`);
     convertibleDrawerMeat.setCharacteristic(this.Characteristic.Name, displayName);
     convertibleDrawerMeat.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     convertibleDrawerMeat.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
     displayName = "Drawer Beverages";
 
     const convertibleDrawerBeverages = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-4');
+    || this.accessory.addService(this.Service.Switch, displayName, `${this.deviceId}-mode-4`);
     convertibleDrawerBeverages.setCharacteristic(this.Characteristic.Name, displayName);
     convertibleDrawerBeverages.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     convertibleDrawerBeverages.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
@@ -90,14 +90,14 @@ export class ConvertibleDrawer {
     displayName = "Drawer Snacks";
 
     const convertibleDrawerSnacks = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-5');
+    || this.accessory.addService(this.Service.Switch, displayName, `${this.deviceId}-mode-5`);
     convertibleDrawerSnacks.setCharacteristic(this.Characteristic.Name, displayName);
     convertibleDrawerSnacks.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     convertibleDrawerSnacks.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
     displayName = "Drawer Wine";
     const convertibleDrawerWine = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'drawer-mode-6');
+    || this.accessory.addService(this.Service.Switch, displayName, `${this.deviceId}-mode-6`);
     convertibleDrawerWine.setCharacteristic(this.Characteristic.Name, displayName);
     convertibleDrawerWine.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     convertibleDrawerWine.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
@@ -123,7 +123,7 @@ export class ConvertibleDrawer {
     
     displayName = "Drawer Temp";  
     const drawerTemperature = this.accessory.getService(displayName) 
-      || this.accessory.addService(this.Service.TemperatureSensor, displayName, 'drawer-temp-1');
+      || this.accessory.addService(this.Service.TemperatureSensor, displayName, `${this.deviceId}-temp-1`);
     drawerTemperature.setCharacteristic(this.Characteristic.Name, displayName);
     drawerTemperature.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     drawerTemperature.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
