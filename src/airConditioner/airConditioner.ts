@@ -101,6 +101,7 @@ export class AirConditioner {
     }
 
     this.setupAccessories();
+    this.client.debug('**** Display AC Thermostat State ****');
     this.displayThermostat();  //debug to see if we can get the AC state
     this.setupWebSocket();
 
@@ -180,6 +181,7 @@ export class AirConditioner {
   private async displayThermostat(): Promise<CharacteristicValue> {
     //Temporary debug to see if we can get the AC state
      for (const service of this.deviceServices) {
+      this.client.debug(`Dev type: ${service.serviceDeviceType}  Type: ${service.serviceType}  Domain ${service.domainType}`);
       if (
         service.serviceDeviceType === "cloud.smarthq.device.airconditioner" &&
         service.serviceType === "cloud.smarthq.service.thermostat.state.v1" &&
