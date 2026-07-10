@@ -101,8 +101,6 @@ export class AirConditioner {
     }
 
     this.setupAccessories();
-    this.client.debug('**** Display AC Thermostat State ****');
-    this.displayThermostat();  //debug to see if we can get the AC state
     this.setupWebSocket();
 
     this.client.on('service_update', (message: ServiceMessage) => {
@@ -139,7 +137,7 @@ export class AirConditioner {
 
     this.acThermostat =
       this.accessory.getService(name) ||
-      this.accessory.addService(this.Service.Thermostat, name, 'ac-thermo');
+      this.accessory.addService(this.Service.Thermostat, name, `${this.deviceId}-ac-thermostat`);
 
     this.acThermostat
       .getCharacteristic(this.Characteristic.TargetHeatingCoolingState)
@@ -156,7 +154,7 @@ export class AirConditioner {
 
     this.acFan =
       this.accessory.getService(fanName) ||
-      this.accessory.addService(this.Service.Fanv2, fanName, 'ac-fan');
+      this.accessory.addService(this.Service.Fanv2, fanName, `${this.deviceId}-ac-fan`);
 
     this.acFan
       .getCharacteristic(this.Characteristic.RotationSpeed)
@@ -170,7 +168,7 @@ export class AirConditioner {
       this.accessory.addService(
         this.Service.Switch,
         'Fan Auto Mode',
-        'ac-fan-auto',
+        `${this.deviceId}-ac-fan-auto`,
       );
 
     this.fanAutoSwitch
@@ -178,35 +176,6 @@ export class AirConditioner {
       .onGet(() => this.fanAuto)
       .onSet(this.setFanAuto.bind(this));
   }
-  private async displayThermostat(): Promise<CharacteristicValue> {
-    //Temporary debug to see if we can get the AC state
-     for (const service of this.deviceServices) {
-      this.client.debug(`Dev type: ${service.serviceDeviceType}  Type: ${service.serviceType}  Domain ${service.domainType}`);
-      if (
-        service.serviceDeviceType === "cloud.smarthq.device.airconditioner" &&
-        service.serviceType === "cloud.smarthq.service.thermostat.state.v1" &&
-        service.domainType === "cloud.smarthq.domain.thermostat"
-      ) {
-        try {
-          const response = await this.client.getServiceDetails(
-            this.deviceId,
-            service.serviceId,
-          );
-
-          if (response?.state == null) {
-            this.client.debug("No response from gettest command");
-            return false;
-          }
-          this.client.debug('AC state response: ' + JSON.stringify(response, null, 2));
-          break;
-        } catch (error) {
-          this.client.debug("Error getting test: " + error);
-          return false;
-        }
-      }
-    }
-    return true;
-  } //End temporary debug
   // ---------------------------
   // FAN LOGIC
   // ---------------------------

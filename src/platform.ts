@@ -117,6 +117,23 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
             this.log.info(chalk.yellow('ServiceDeviceType = ' + service.serviceDeviceType));
             this.log.info(chalk.yellow('ServiceType       = ' + service.serviceType));
             this.log.info(chalk.yellow('Domain            = ' + service.domainType));
+
+
+        try {
+          const response = await this.client.getServiceDetails(
+            device.deviceId,
+            service.serviceId,
+          );
+
+          if (response?.state == null) {
+            this.client.debug("No response from gettest command");
+            return false;
+          }
+          this.log.info(chalk.green(`--- state response for ${service.serviceType}: ` + JSON.stringify(response, null, 2)));
+        } catch (error) {
+          this.client.debug("Error getting test: " + error);
+          return false;
+        }
           }
         }
 
