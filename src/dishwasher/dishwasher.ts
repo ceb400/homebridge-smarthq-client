@@ -170,7 +170,7 @@ export class Dishwasher {
 
     const dishwasher =
       this.accessory.getService(displayName) ||
-      this.accessory.addService(this.Service.Valve, displayName, "dishwashher-123");
+      this.accessory.addService(this.Service.Valve, displayName, `${this.deviceId}-dishwasher`);
     dishwasher.setCharacteristic(this.Characteristic.Name, displayName);
     dishwasher.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
     dishwasher.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
@@ -233,7 +233,7 @@ export class Dishwasher {
     displayName = "Cycle Pct Done";
     const cyclePct =
       this.accessory.getService(displayName) ||
-      this.accessory.addService(this.Service.Lightbulb, displayName, "cycle-done-3");
+      this.accessory.addService(this.Service.Lightbulb, displayName, `${this.deviceId}-cycle-done`);
 
     cyclePct.setCharacteristic(this.Characteristic.Name, displayName);
     cyclePct.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
@@ -249,7 +249,7 @@ export class Dishwasher {
      */
     displayName = "Steam option";
 
-    const optionSteam = this.setupService("Outlet", displayName, "optionsteam-223");
+    const optionSteam = this.setupService("Outlet", displayName, `${this.deviceId}-optionsteam`);
 
     optionSteam
       .getCharacteristic(this.Characteristic.On)
@@ -272,8 +272,7 @@ export class Dishwasher {
     const optionBottlewash = this.setupService(
       "Outlet",
       displayName,
-      "optionbottlewash-223",
-    );
+      `${this.deviceId}-optionbottlewash`);
 
     optionBottlewash
       .getCharacteristic(this.Characteristic.On)
@@ -296,8 +295,7 @@ export class Dishwasher {
     const optionSilverware = this.setupService(
       "Outlet",
       displayName,
-      "optionsilverwarewash-223",
-    );
+      `${this.deviceId}-option-silverware`);
 
     optionSilverware
       .getCharacteristic(this.Characteristic.On)

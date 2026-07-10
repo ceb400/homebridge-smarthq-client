@@ -62,7 +62,7 @@ export class SoundOption {
     
     const displayName = "Sound Switch"; 
 
-    const dishsound = this.setupService('Switch', displayName, 'dishsound-1234');
+    const dishsound = this.setupService('Switch', displayName, `${this.deviceId}-sound-switch`);
 
       dishsound.getCharacteristic(this.Characteristic.On)
         .onGet(this.handleToggleGet.bind(this, 'cloud.smarthq.device.appliance', 'cloud.smarthq.domain.sound'))

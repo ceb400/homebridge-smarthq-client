@@ -70,7 +70,7 @@ export class SabbathMode {
     const displayName = "Dw Sabbath Mode"; 
 
     const sabbathMode = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'sabbathmode234');
+    || this.accessory.addService(this.Service.Switch, displayName, `${this.deviceId}-sabbathmode`);
     sabbathMode.setCharacteristic(this.Characteristic.Name, displayName);
 
     sabbathMode.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
