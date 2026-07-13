@@ -17,6 +17,7 @@ export class AirConditioner {
   private isOn = false;
   private physicalOnState = false;
   private commandQueue: Promise<void> = Promise.resolve();
+  private debounceTimeout: NodeJS.Timeout | null = null;
 
   private currentAmbientCelsius = 22.22;
 
@@ -427,7 +428,18 @@ export class AirConditioner {
   // ---------------------------
   // API COMMAND SENDER
   // ---------------------------
-  private async sendCommand() {
+  private sendCommand() {
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout);
+    }
+
+    this.debounceTimeout = setTimeout(() => {
+      this.debounceTimeout = null;
+      this.executeSendCommand();
+    }, 150);
+  }
+
+  private async executeSendCommand() {
     const svc = this.findService(
       'cloud.smarthq.service.thermostat.v1',
       'cloud.smarthq.domain.thermostat',
