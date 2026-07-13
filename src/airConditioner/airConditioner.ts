@@ -1,6 +1,5 @@
 import {
   API,
-  CharacteristicValue,
   PlatformAccessory,
   Service,
   Characteristic,
@@ -11,7 +10,7 @@ import { SmartHqPlatform } from '../platform.js';
 import { ServiceMessage } from '../index.js';
 
 export class AirConditioner {
-  // State cache (defaults match GEMINI.md)
+  // State cache
   private lastActiveMode = 'cloud.smarthq.type.thermostatmode.cool';
   private lastActiveFanSpeed = 'cloud.smarthq.type.fanspeed.low';
   private lastActiveCelsius = 22.22;
@@ -127,7 +126,7 @@ export class AirConditioner {
   // ACCESSORIES SETUP
   // ---------------------------
   private setupAccessories(supportedModes: string[], supportedFanSpeeds: string[]) {
-    // Clean up old cached services on the parent accessory (Thermostat, Fan, Fanv2, Switch)
+    // Clean up old cached services on the parent accessory
     const oldServiceUUIDs = [
       this.Service.Thermostat.UUID,
       this.Service.Fan.UUID,
