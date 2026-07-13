@@ -373,7 +373,6 @@ export class AirConditioner {
                 this.lastActiveMode === 'cloud.smarthq.type.thermostatmode.fanonly' &&
                 speed === 'cloud.smarthq.type.fanspeed.auto'
               ) {
-                this.platform.log.info('Auto fan speed is not supported in Fan Only mode. Reverting selection.');
                 setTimeout(() => {
                   service.updateCharacteristic(this.Characteristic.On, false);
                   const activeSvc = this.fanOutlets.get(this.lastActiveFanSpeed);
