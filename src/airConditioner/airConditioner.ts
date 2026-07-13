@@ -64,49 +64,49 @@ export class AirConditioner {
     });
 
     // 1. Find services and initialize local variables
-    const thermoSvc = this.findService(
+    const thermostatService = this.findService(
       'cloud.smarthq.service.thermostat.v1',
       'cloud.smarthq.domain.thermostat',
     );
 
-    if (thermoSvc?.state) {
-      if (thermoSvc.state.on != null) {
-        this.isOn = thermoSvc.state.on as boolean;
+    if (thermostatService?.state) {
+      if (thermostatService.state.on != null) {
+        this.isOn = thermostatService.state.on as boolean;
         this.physicalOnState = this.isOn;
       }
-      if (thermoSvc.state.coolCelsiusConverted != null) {
-        this.lastActiveCelsius = thermoSvc.state.coolCelsiusConverted as number;
+      if (thermostatService.state.coolCelsiusConverted != null) {
+        this.lastActiveCelsius = thermostatService.state.coolCelsiusConverted as number;
       }
-      if (thermoSvc.state.mode != null) {
-        this.lastActiveMode = thermoSvc.state.mode as string;
+      if (thermostatService.state.mode != null) {
+        this.lastActiveMode = thermostatService.state.mode as string;
       }
-      if (thermoSvc.state.fanSpeed != null) {
-        this.lastActiveFanSpeed = thermoSvc.state.fanSpeed as string;
+      if (thermostatService.state.fanSpeed != null) {
+        this.lastActiveFanSpeed = thermostatService.state.fanSpeed as string;
       }
     }
 
     // Load Celsius min/max bounds from thermostat config
-    if (thermoSvc?.config) {
-      if (thermoSvc.config.coolCelsiusMinimumConverted != null) {
-        this.coolCelsiusMin = thermoSvc.config.coolCelsiusMinimumConverted as number;
+    if (thermostatService?.config) {
+      if (thermostatService.config.coolCelsiusMinimumConverted != null) {
+        this.coolCelsiusMin = thermostatService.config.coolCelsiusMinimumConverted as number;
       }
-      if (thermoSvc.config.coolCelsiusMaximumConverted != null) {
-        this.coolCelsiusMax = thermoSvc.config.coolCelsiusMaximumConverted as number;
+      if (thermostatService.config.coolCelsiusMaximumConverted != null) {
+        this.coolCelsiusMax = thermostatService.config.coolCelsiusMaximumConverted as number;
       }
     }
 
     // Load initial ambient temperature
-    const ambientSvc = this.findService(
+    const ambientService = this.findService(
       'cloud.smarthq.service.temperature',
       'cloud.smarthq.domain.indoor.ambient',
     );
-    if (ambientSvc?.state?.celsiusConverted != null) {
-      this.currentAmbientCelsius = ambientSvc.state.celsiusConverted as number;
+    if (ambientService?.state?.celsiusConverted != null) {
+      this.currentAmbientCelsius = ambientService.state.celsiusConverted as number;
     }
 
     // 2. Setup accessories and services
-    const supportedModes: string[] = (thermoSvc?.config?.supportedModes as string[]) || [];
-    const supportedFanSpeeds: string[] = (thermoSvc?.config?.supportedFanSpeeds as string[]) || [];
+    const supportedModes: string[] = (thermostatService?.config?.supportedModes as string[]) || [];
+    const supportedFanSpeeds: string[] = (thermostatService?.config?.supportedFanSpeeds as string[]) || [];
 
     this.setupAccessories(supportedModes, supportedFanSpeeds);
     this.setupWebSocket();
@@ -164,25 +164,24 @@ export class AirConditioner {
       .getCharacteristic(this.Characteristic.Active)
       .onGet(() => (this.isOn ? 1 : 0))
       .onSet(async (value) => {
-        const val = value as number;
-        this.isOn = val === 1;
+        this.isOn = (value as number) === 1;
 
         if (this.isOn) {
           const stateVal = this.lastActiveMode === 'cloud.smarthq.type.thermostatmode.fanonly' ? 1 : 3;
           this.acThermostat.updateCharacteristic(this.Characteristic.CurrentHeaterCoolerState, stateVal);
-          for (const [m, svc] of this.modeOutlets.entries()) {
-            svc.updateCharacteristic(this.Characteristic.On, this.lastActiveMode === m);
+          for (const [mode, service] of this.modeOutlets.entries()) {
+            service.updateCharacteristic(this.Characteristic.On, this.lastActiveMode === mode);
           }
-          for (const [s, svc] of this.fanOutlets.entries()) {
-            svc.updateCharacteristic(this.Characteristic.On, this.lastActiveFanSpeed === s);
+          for (const [fanSpeed, service] of this.fanOutlets.entries()) {
+            service.updateCharacteristic(this.Characteristic.On, this.lastActiveFanSpeed === fanSpeed);
           }
         } else {
           this.acThermostat.updateCharacteristic(this.Characteristic.CurrentHeaterCoolerState, 0);
-          for (const svc of this.modeOutlets.values()) {
-            svc.updateCharacteristic(this.Characteristic.On, false);
+          for (const service of this.modeOutlets.values()) {
+            service.updateCharacteristic(this.Characteristic.On, false);
           }
-          for (const svc of this.fanOutlets.values()) {
-            svc.updateCharacteristic(this.Characteristic.On, false);
+          for (const service of this.fanOutlets.values()) {
+            service.updateCharacteristic(this.Characteristic.On, false);
           }
         }
 
@@ -278,9 +277,9 @@ export class AirConditioner {
               this.isOn = true;
               this.lastActiveMode = mode;
 
-              for (const [m, svc] of this.modeOutlets.entries()) {
-                if (m !== mode) {
-                  svc.updateCharacteristic(this.Characteristic.On, false);
+              for (const [modeKey, service] of this.modeOutlets.entries()) {
+                if (modeKey !== mode) {
+                  service.updateCharacteristic(this.Characteristic.On, false);
                 }
               }
 
@@ -288,8 +287,8 @@ export class AirConditioner {
               const stateVal = mode === 'cloud.smarthq.type.thermostatmode.fanonly' ? 1 : 3;
               this.acThermostat.updateCharacteristic(this.Characteristic.CurrentHeaterCoolerState, stateVal);
 
-              for (const [s, svc] of this.fanOutlets.entries()) {
-                svc.updateCharacteristic(this.Characteristic.On, this.lastActiveFanSpeed === s);
+              for (const [fanSpeed, service] of this.fanOutlets.entries()) {
+                service.updateCharacteristic(this.Characteristic.On, this.lastActiveFanSpeed === fanSpeed);
               }
 
               this.sendCommand();
@@ -298,11 +297,11 @@ export class AirConditioner {
               if (this.lastActiveMode === mode) {
                 this.isOn = false;
 
-                for (const svc of this.modeOutlets.values()) {
-                  svc.updateCharacteristic(this.Characteristic.On, false);
+                for (const service of this.modeOutlets.values()) {
+                  service.updateCharacteristic(this.Characteristic.On, false);
                 }
-                for (const svc of this.fanOutlets.values()) {
-                  svc.updateCharacteristic(this.Characteristic.On, false);
+                for (const service of this.fanOutlets.values()) {
+                  service.updateCharacteristic(this.Characteristic.On, false);
                 }
 
                 this.acThermostat.updateCharacteristic(this.Characteristic.Active, 0);
@@ -376,9 +375,9 @@ export class AirConditioner {
               ) {
                 setTimeout(() => {
                   service.updateCharacteristic(this.Characteristic.On, false);
-                  const activeSvc = this.fanOutlets.get(this.lastActiveFanSpeed);
-                  if (activeSvc) {
-                    activeSvc.updateCharacteristic(this.Characteristic.On, this.isOn);
+                  const activeService = this.fanOutlets.get(this.lastActiveFanSpeed);
+                  if (activeService) {
+                    activeService.updateCharacteristic(this.Characteristic.On, this.isOn);
                   }
                 }, 50);
                 return;
@@ -387,9 +386,9 @@ export class AirConditioner {
               this.isOn = true;
               this.lastActiveFanSpeed = speed;
 
-              for (const [s, svc] of this.fanOutlets.entries()) {
-                if (s !== speed) {
-                  svc.updateCharacteristic(this.Characteristic.On, false);
+              for (const [fanSpeed, service] of this.fanOutlets.entries()) {
+                if (fanSpeed !== speed) {
+                  service.updateCharacteristic(this.Characteristic.On, false);
                 }
               }
 
@@ -397,8 +396,8 @@ export class AirConditioner {
               const stateVal = this.lastActiveMode === 'cloud.smarthq.type.thermostatmode.fanonly' ? 1 : 3;
               this.acThermostat.updateCharacteristic(this.Characteristic.CurrentHeaterCoolerState, stateVal);
 
-              for (const [m, svc] of this.modeOutlets.entries()) {
-                svc.updateCharacteristic(this.Characteristic.On, this.lastActiveMode === m);
+              for (const [modeKey, service] of this.modeOutlets.entries()) {
+                service.updateCharacteristic(this.Characteristic.On, this.lastActiveMode === modeKey);
               }
 
               this.sendCommand();
@@ -407,11 +406,11 @@ export class AirConditioner {
               if (this.lastActiveFanSpeed === speed) {
                 this.isOn = false;
 
-                for (const svc of this.modeOutlets.values()) {
-                  svc.updateCharacteristic(this.Characteristic.On, false);
+                for (const service of this.modeOutlets.values()) {
+                  service.updateCharacteristic(this.Characteristic.On, false);
                 }
-                for (const svc of this.fanOutlets.values()) {
-                  svc.updateCharacteristic(this.Characteristic.On, false);
+                for (const service of this.fanOutlets.values()) {
+                  service.updateCharacteristic(this.Characteristic.On, false);
                 }
 
                 this.acThermostat.updateCharacteristic(this.Characteristic.Active, 0);
@@ -440,12 +439,12 @@ export class AirConditioner {
   }
 
   private async executeSendCommand() {
-    const svc = this.findService(
+    const service = this.findService(
       'cloud.smarthq.service.thermostat.v1',
       'cloud.smarthq.domain.thermostat',
     );
 
-    if (!svc) return;
+    if (!service) return;
 
     this.commandQueue = this.commandQueue.then(async () => {
       const command: Record<string, unknown> = {
@@ -536,11 +535,11 @@ export class AirConditioner {
       this.acThermostat.updateCharacteristic(this.Characteristic.CurrentHeaterCoolerState, stateVal);
 
       // Update dynamic outlets
-      for (const [m, svc] of this.modeOutlets.entries()) {
-        svc.updateCharacteristic(this.Characteristic.On, this.isOn && this.lastActiveMode === m);
+      for (const [mode, service] of this.modeOutlets.entries()) {
+        service.updateCharacteristic(this.Characteristic.On, this.isOn && this.lastActiveMode === mode);
       }
-      for (const [s, svc] of this.fanOutlets.entries()) {
-        svc.updateCharacteristic(this.Characteristic.On, this.isOn && this.lastActiveFanSpeed === s);
+      for (const [fanSpeed, service] of this.fanOutlets.entries()) {
+        service.updateCharacteristic(this.Characteristic.On, this.isOn && this.lastActiveFanSpeed === fanSpeed);
       }
     } else if (message.domainType === 'cloud.smarthq.domain.indoor.ambient') {
       if (state.celsiusConverted !== undefined) {
@@ -555,7 +554,7 @@ export class AirConditioner {
   // ---------------------------
   private findService(serviceType: string, domainType: string) {
     return this.deviceServices.find(
-      (s) => s.serviceType === serviceType && s.domainType === domainType,
+      (service) => service.serviceType === serviceType && service.domainType === domainType,
     );
   }
 
