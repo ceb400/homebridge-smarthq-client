@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.5-beta.5](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-08)
+## [1.2.5-beta.6](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-08)
 - Air conditioner updates to dynamically add only modes and fan speeds for each specific model.
 - AC Modes and AC Fan Speeds tiles in Apple Home will open to show choices for modes and speeds.
 

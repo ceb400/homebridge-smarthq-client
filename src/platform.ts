@@ -199,7 +199,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
             );
             break;
 
-          case 'cloud.smarthq.device.airconditioner':
+          case 'cloud.smarthq.device.airconditioner': {
             this.debug('green', `Creating group accessories for air conditioner modes and fan speeds for device ${device.nickname}`);
 
             const groupModesUuid = this.getAccessoryByDeviceId(
@@ -223,6 +223,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
               [groupModesUuid!, groupFanUuid!],
             );
             break;
+          }
 
           default:
             this.debug('red', `not implemented device : for device ${device.nickname}`);
