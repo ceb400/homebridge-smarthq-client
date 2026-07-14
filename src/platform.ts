@@ -174,11 +174,25 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
             'Preset Modes',
           );
 
+          const groupModesUuid = this.getAccessoryByDeviceId(
+            device,
+            `acmodes-${device.deviceId}`,
+            'AC Mode',
+          );
+
+          const groupFanUuid = this.getAccessoryByDeviceId(
+              device,
+              `acfan-${device.deviceId}`,
+              'AC Fan',
+            );
+
           this.groupAccessoryArray = [
             groupTemperatureUuid!,
             groupDryerUuid!,
             groupZoneUuid!,
             groupPresetsUuid!,
+            groupModesUuid!,
+            groupFanUuid!,
           ];
         }
 
@@ -202,17 +216,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
           case 'cloud.smarthq.device.airconditioner':
             this.debug('green', `Creating group accessories for air conditioner modes and fan speeds for device ${device.nickname}`);
 
-            const groupModesUuid = this.getAccessoryByDeviceId(
-              device,
-              `acmodes-${device.deviceId}`,
-              'AC Mode',
-            );
-
-            const groupFanUuid = this.getAccessoryByDeviceId(
-              device,
-              `acfan-${device.deviceId}`,
-              'AC Fan',
-            );
+            
 
             this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
             setupAirConditionerServices.call(
@@ -220,7 +224,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
               accessoryType!,
               deviceServices,
               device.deviceId,
-              [groupModesUuid!, groupFanUuid!],
+              this.groupAccessoryArray,
             );
             break;
 

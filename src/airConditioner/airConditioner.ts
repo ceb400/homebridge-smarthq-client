@@ -46,15 +46,15 @@ export class AirConditioner {
     private readonly accessory: PlatformAccessory, // Parent: Air Conditioner
     private readonly deviceServices: DeviceService[],
     private readonly deviceId: string,
-    private readonly groupAccessory: PlatformAccessory[], // [Modes, Fan]
+    private readonly groupAccessory: PlatformAccessory[], //includes all from dishwasher and AC Modes, Fan
   ) {
     this.api = platform.api;
     this.Service = this.api.hap.Service;
     this.Characteristic = this.api.hap.Characteristic;
 
     this.parentAccessory = accessory;
-    this.modesAccessory = groupAccessory[0];
-    this.fanAccessory = groupAccessory[1];
+    this.modesAccessory = groupAccessory[4];
+    this.fanAccessory = groupAccessory[5];
 
     this.client = new SmartHQClient({
       clientId: platform.config.clientId,
