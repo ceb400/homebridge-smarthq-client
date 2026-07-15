@@ -122,6 +122,10 @@ Once an access (and refresh) token have been saved this step will only be needed
 used to store your tokens is deleted. 
 When an access token expires the plugin will use the refresh token to obtain a new access token automatically.
 
+## (for Raspberry pi OS users) ##
+To complete the authentication flow will require the Raspberry pi OS to have a desktop and browser installed.
+For assistance in installing these components please see this [article](https://raspberrytips.com/upgrade-raspbian-lite-to-desktop/)
+
 ## Notifications (for refrigerators)
 
 API device alerts are monitored for the following conditions:  
@@ -153,7 +157,8 @@ will not be any tile/device shown in the Home app.
 
 ## Acknowledgements
 
-[donavanbecker](https://github.com/donavanbecker) for the excellent 'ge-smarthq' pkg.   
+[donavanbecker](https://github.com/donavanbecker) for the excellent 'ge-smarthq' pkg.  
+[evan robert](https://github.com/actuallyevan)    for contributing air conditioner device code
 GE SmartHQ API Client
 
 
