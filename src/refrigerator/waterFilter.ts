@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 
 
@@ -61,13 +61,13 @@ export class WaterFilter {
     const displayName = "Filter Life";
     const displayName2 = "Filter Life Level";
     const refrigeratorWaterFilter = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.FilterMaintenance, displayName, 'filter-maintenance-1');
+    || this.accessory.addService(this.Service.FilterMaintenance, displayName,  `${this.deviceId}-filter-maintenance`);
     refrigeratorWaterFilter.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     refrigeratorWaterFilter.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 
     // add a lightbulb service to show the filter life level as a percentage in the Home app 
     const refrigeratorPseudoFilter = this.accessory.getService(displayName2) 
-    || this.accessory.addService(this.Service.Lightbulb, displayName2, 'filter-maintenance-2');
+    || this.accessory.addService(this.Service.Lightbulb, displayName2,  `${this.deviceId}-f`);
 
     this.client.debug('Adding a pseudo Water Filter Level indicator');
     refrigeratorPseudoFilter.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

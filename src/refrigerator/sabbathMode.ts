@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 
 /**
@@ -64,7 +64,7 @@ export class SabbathMode {
     const displayName = "Sabbath Mode"; 
 
     const sabbathMode = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, 'sabbathmode123');
+    || this.accessory.addService(this.Service.Switch, displayName,  `${this.deviceId}-sabbathmode1`);
     sabbathMode.setCharacteristic(this.Characteristic.Name, displayName);
 
     sabbathMode.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

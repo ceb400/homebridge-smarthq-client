@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.5](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-15)
+- Merge beta branch into main branch
+
+## [1.2.5-beta.7](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-08)
+- Air conditioner was logging too much device state info.  Changed to only log if enabled for debug logging 
+
+## [1.2.5-beta.6](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-08)
+- Air conditioner updates to dynamically add only modes and fan speeds for each specific model.
+- AC Modes and AC Fan Speeds tiles in Apple Home will open to show choices for modes and speeds.
+
 ## [1.2.2](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.2) (2026-07-02)
 - Bug fix for device discovery (checking device.nickname includes substring)
 

@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform }              from '../platform.js'
 import { ServiceMessage }               from "../index.js";
 import chalk                            from 'chalk';
@@ -84,7 +84,7 @@ export class Refrigerator {
     //===================================================================================== 
     const displayName = "Refrigerator";
     const refrigeratorThermostat = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Thermostat, displayName, 'fridge-thermo1');
+    || this.accessory.addService(this.Service.Thermostat, displayName, `${this.deviceId}-thermo1`);
     // set the service name, this is what is displayed as the default name on the Home app
     refrigeratorThermostat.setCharacteristic(this.Characteristic.Name, displayName);
     refrigeratorThermostat.addOptionalCharacteristic(this.Characteristic.ConfiguredName)

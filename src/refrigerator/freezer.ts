@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 
 
@@ -44,7 +44,7 @@ export class Freezer {
     //===================================================================================== 
     const displayName = "Freezer";
     const freezerThermostat = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Thermostat, displayName, 'freezer-thermo1');
+    || this.accessory.addService(this.Service.Thermostat, displayName,  `${this.deviceId}-freezerthermo1`);
     freezerThermostat.setCharacteristic(this.Characteristic.Name, displayName);
     freezerThermostat.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
     freezerThermostat.setCharacteristic(this.Characteristic.ConfiguredName, displayName)

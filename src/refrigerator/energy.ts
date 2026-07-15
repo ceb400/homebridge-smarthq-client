@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 
 
@@ -61,7 +61,7 @@ constructor(
   //===================================================================================== 
   const displayName = "Watts/hr";
   const energySensor = this.accessory.getService(displayName) 
-  || this.accessory.addService(this.Service.TemperatureSensor, displayName, 'energy-2');
+  || this.accessory.addService(this.Service.TemperatureSensor, displayName,  `${this.deviceId}-energy1`);
   energySensor.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
   energySensor.setCharacteristic(this.Characteristic.ConfiguredName, displayName)
 

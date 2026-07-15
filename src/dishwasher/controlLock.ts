@@ -5,7 +5,7 @@ import {
   Service,
   Characteristic,
 } from "homebridge";
-import { SmartHQClient, DeviceService } from "ge-smarthq";
+import { SmartHQClient, DeviceService } from "ge-smarthq-api";
 import { SmartHqPlatform } from "../platform.js";
 
 /**
@@ -79,7 +79,7 @@ export class ControlLock {
       this.accessory.addService(
         this.Service.Switch,
         displayName,
-        "dw-control-lock-123",
+        `${this.deviceId}-controllock`
       );
     controlsLock.setCharacteristic(this.Characteristic.Name, displayName);
 

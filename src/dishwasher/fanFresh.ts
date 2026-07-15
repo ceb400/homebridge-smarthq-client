@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
+import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 
 /**
@@ -62,7 +62,7 @@ export class FanFresh {
     
     const displayName = "UltraFresh Fan"; 
 
-    const fanfresh = this.setupService('Switch', displayName, 'fanfresh-1234');
+    const fanfresh = this.setupService('Switch', displayName, `${this.deviceId}-fanfresh`);
      
       fanfresh.getCharacteristic(this.Characteristic.On)
         .onGet(this.handleToggleGet.bind(this, 'cloud.smarthq.device.dishwasher', 'cloud.smarthq.domain.fan.fresh'))

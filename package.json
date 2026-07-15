@@ -1,8 +1,8 @@
 {
   "name": "homebridge-smarthq-client",
-  "version": "1.2.2",
+  "version": "1.2.5-beta.7",
   "private": false,
-  "description": "Plugin for controlling GE refrigerator and dishwasher via SmartHQ API.",
+  "description": "Plugin for controlling GE refrigerator, dishwasher, air conditioner via SmartHQ API.",
   "keywords": [
     "homebridge-plugin",
     "SmartHQ",
@@ -10,6 +10,9 @@
     "refrigerator",
     "GE Dishwasher",
     "dishwasher",
+    "GE Air Conditioner",
+    "air conditioner",
+    "AC",
     "smart appliance",
     "OAuth2"
   ],
@@ -33,6 +36,7 @@
     "build": "npm run lint && rimraf ./dist && tsc",
     "lint": "eslint . --max-warnings=0",
     "prepublishOnly": "npm run lint && npm run build",
+    "pub": "npm version patch --force && npm publish",
     "watch": "npm run build && npm link && nodemon"
   },
   "dependencies": {
@@ -40,7 +44,7 @@
     "axios": "^1.13.6",
     "chalk": "^5.6.2",
     "express": "^5.2.1",
-    "ge-smarthq": "^1.0.1",
+    "ge-smarthq-api": "^1.0.1",
     "homebridge-lib": "^7.3.2",
     "node-fetch": "^3.3.2",
     "node-persist": "^4.0.4",
@@ -67,5 +71,5 @@
     "node": "^20.18.0 || ^22.10.0 || ^24.0.0",
     "homebridge": "^1.8.0 || ^2.0.0-beta.0"
   },
-  "displayName": "Homebridge GE SmartHQ"
+  "displayName": "Homebridge GE SmartHQ api"
 }
