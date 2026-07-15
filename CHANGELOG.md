@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.5](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-15)
+- Merge beta branch into main branch
+
 ## [1.2.5-beta.7](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-08)
 - Air conditioner was logging too much device state info.  Changed to only log if enabled for debug logging 
 
