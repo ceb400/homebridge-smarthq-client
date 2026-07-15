@@ -128,7 +128,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
             this.client.debug("No response from gettest command");
             return false;
           }
-          this.log.info(chalk.green(`--- state response for ${service.serviceType}: ` + JSON.stringify(response, null, 2)));
+          this.log.info(chalk.yellow('Config            = ' + JSON.stringify(response.config, null, 2)));
         } catch (error) {
           this.client.debug("Error getting test: " + error);
           return false;
