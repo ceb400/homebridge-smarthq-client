@@ -109,8 +109,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
         if (
           (this.config.debugServicesFridge && device.deviceType === 'cloud.smarthq.device.refrigerator') ||
           (this.config.debugServicesDishwasher && device.deviceType === 'cloud.smarthq.device.dishwasher') ||
-          this.config.debugServicesAll ||
-          device.deviceType === 'cloud.smarthq.device.airconditioner'
+          this.config.debugServicesAll 
         ) {
           for (const service of sortedServices) {
             this.log.info(chalk.yellow('ServiceId         = ' + service.serviceId));
