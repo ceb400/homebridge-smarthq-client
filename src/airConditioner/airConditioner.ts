@@ -126,6 +126,7 @@ export class AirConditioner {
   // ---------------------------
   // ACCESSORIES SETUP
   // ---------------------------
+
   private setupAccessories(supportedModes: string[], supportedFanSpeeds: string[]) {
     // Clean up old cached services on the parent accessory
     const oldServiceUUIDs = [
@@ -422,6 +423,9 @@ export class AirConditioner {
           });
       }
     }
+
+    // D. Add Debug State switch to parent accessory
+    this.addDebugState('cloud.smarthq.service.thermostat.v1');
   }
 
   // ---------------------------
@@ -583,5 +587,70 @@ export class AirConditioner {
         error,
       );
     }
+  }
+
+
+// ---------------------------
+// HELPERS FOR DEBUGGING
+// Adds a "Debug State" switch to the parent accessory that logs the current state of the specified service type when toggled on
+// ---------------------------
+
+  private addDebugState(serviceType: string): void {
+  const debugState = this.setupService(
+      "Switch",
+      "Debug State",
+      `${this.deviceId}-debug-state`,
+    );
+
+    debugState
+      .getCharacteristic(this.Characteristic.On)
+      .onGet(() => {
+        return debugState.getCharacteristic(this.Characteristic.On).value as boolean;
+      })
+      .onSet(async (value) => {
+        if (value) {
+          const response = await  this.client.getDevice(this.deviceId);
+          const deviceServices = response.services ?? [];
+          for (const service of deviceServices) {
+            if (service.serviceType === serviceType) {
+              this.client.debug("Debug State - Device Info: " + JSON.stringify(service, null, 2));
+            }
+          }
+
+          setTimeout(() => {
+            debugState.updateCharacteristic(this.Characteristic.On, false);
+          }, 1000);
+        }
+      });
+    }
+
+     setupService(serviceType: string, displayName: string, serviceIdSuffix: string) {
+    let service: Service;
+
+    switch (serviceType) {
+      case "Outlet":
+        service =
+          this.accessory.getService(displayName) ||
+          this.accessory.addService(this.Service.Outlet, displayName, serviceIdSuffix);
+        break;
+
+      case "Switch":
+        service =
+          this.accessory.getService(displayName) ||
+          this.accessory.addService(this.Service.Switch, displayName, serviceIdSuffix);
+        break;
+
+      default:
+        this.client.debug("Unknown service type: " + serviceType + "");
+        service =
+          this.accessory.getService(displayName) ||
+          this.accessory.addService(this.Service.Fan, displayName, serviceIdSuffix);
+    }
+
+    service.setCharacteristic(this.Characteristic.Name, displayName);
+    service.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
+    service.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
+
+    return service;
   }
 }
