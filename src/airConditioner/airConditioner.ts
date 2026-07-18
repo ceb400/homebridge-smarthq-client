@@ -8,6 +8,7 @@ import {
 import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 import { ServiceMessage } from '../index.js';
+import chalk from 'chalk';
 
 export class AirConditioner {
   // State cache
@@ -207,6 +208,9 @@ export class AirConditioner {
             }
           };
 
+          this.client.debug(chalk.yellow(`## Turning on AC:`));
+          this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
+
           this.sendCommand(cmdBody);
 
         } else {
@@ -218,13 +222,17 @@ export class AirConditioner {
             service.updateCharacteristic(this.Characteristic.On, false);
           }
 
-          // Turned off
+          // Turned off, so send command to power down AC unit. Note: GE firmware does not support a "power off" command, so we just send the "on" parameter as false to turn off the unit.
+
           const cmdBody = {
               command: {
                 on: this.isOn,
                 commandType: 'cloud.smarthq.command.thermostat.v1.set',
               }
           };
+
+          this.client.debug(chalk.yellow(`## Turning off AC:`));
+          this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
 
           this.sendCommand(cmdBody);
         }
@@ -274,6 +282,10 @@ export class AirConditioner {
                 commandType: 'cloud.smarthq.command.thermostat.v1.set',
               }
             };
+
+          this.client.debug(chalk.yellow('## Setting AC Temperature:'));
+          this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
+
         this.sendCommand(cmdBody);
       });
 
@@ -388,6 +400,10 @@ export class AirConditioner {
                     }
                   };
               }
+
+              this.client.debug(chalk.yellow('## Setting AC Mode:'));
+              this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
+
 
               this.sendCommand(cmdBody);
             } else {
@@ -609,7 +625,7 @@ export class AirConditioner {
         */
 
       try {
-        await this.client.sendCommand({
+        const response = await this.client.sendCommand({
           command,
           kind: 'service#command',
           deviceId: this.deviceId,
@@ -617,6 +633,13 @@ export class AirConditioner {
           serviceType: 'cloud.smarthq.service.thermostat.v1',
           domainType: 'cloud.smarthq.domain.thermostat',
         });
+        if (response == null) {
+          this.client.debug("No response from send command");
+        } else {
+          this.client.debug(
+            "####  Response from send command : " + response.outcome,
+          );
+        }
       } catch (error) {
         this.platform.log.error(`Error sending command to AC:`, error);
       }
