@@ -5,7 +5,7 @@ import {
   Characteristic,
 } from 'homebridge';
 
-import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
+import { SmartHQClient, DeviceService, SendCommandRequest } from 'ge-smarthq-api';
 import { SmartHqPlatform } from '../platform.js';
 import { ServiceMessage } from '../index.js';
 import chalk from 'chalk';
@@ -204,8 +204,14 @@ export class AirConditioner {
               fanSpeed: this.lastActiveFanSpeedMode || this.FAN_SPEED_LOW,
               temperature: this.lastActiveCelsius || 22.22,
               commandType: 'cloud.smarthq.command.thermostat.v1.set',
-            }
+            },
+            kind: 'service#command',
+            deviceId: this.deviceId,
+            serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+            serviceType: 'cloud.smarthq.service.thermostat.v1',
+            domainType: 'cloud.smarthq.domain.thermostat',
           };
+         
 
           this.client.debug(chalk.yellow(`## Turning on AC:`));
           this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
@@ -224,10 +230,15 @@ export class AirConditioner {
           // Turned off, so send command to power down AC unit. Note: GE firmware does not support a "power off" command, so we just send the "on" parameter as false to turn off the unit.
 
           const cmdBody = {
-              command: {
-                on: this.isOn,
-                commandType: 'cloud.smarthq.command.thermostat.v1.set',
-              }
+            command: {
+              on: this.isOn,
+              commandType: 'cloud.smarthq.command.thermostat.v1.set',
+            },
+            kind: 'service#command',
+            deviceId: this.deviceId,
+            serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+            serviceType: 'cloud.smarthq.service.thermostat.v1',
+            domainType: 'cloud.smarthq.domain.thermostat',
           };
 
           this.client.debug(chalk.yellow(`## Turning off AC:`));
@@ -276,11 +287,16 @@ export class AirConditioner {
         // Set temperature on the AC unit via API command
 
         const cmdBody = {
-              command: {
-                coolFahrenheit: coolFahrenheit,
-                commandType: 'cloud.smarthq.command.thermostat.v1.set',
-              }
-            };
+            command: {
+              coolFahrenheit: coolFahrenheit,
+              commandType: 'cloud.smarthq.command.thermostat.v1.set',
+            },
+            kind: 'service#command',
+            deviceId: this.deviceId,
+            serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+            serviceType: 'cloud.smarthq.service.thermostat.v1',
+            domainType: 'cloud.smarthq.domain.thermostat',
+          };
 
           this.client.debug(chalk.yellow('## Setting AC Temperature:'));
           this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
@@ -365,7 +381,7 @@ export class AirConditioner {
 
               // Handle behavior constraint: Fan Only mode does not support Auto Fan Speed - force Fan Speed to Low
               // Dry mode sets fan speed to Auto, which is valid. Only Fan Only mode needs to be adjusted.
-              let cmdBody: Record<string, unknown>;
+              let cmdBody: SendCommandRequest;
               switch (mode) {
                 case this.MODE_FANONLY:
                   cmdBody = {
@@ -373,7 +389,12 @@ export class AirConditioner {
                       mode:     this.MODE_FANONLY,  
                       fanSpeed: this.FAN_SPEED_LOW,
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
-                    }
+                    },
+                  kind: 'service#command',
+                  deviceId: this.deviceId,
+                  serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+                  serviceType: 'cloud.smarthq.service.thermostat.v1',
+                  domainType: 'cloud.smarthq.domain.thermostat',
                   };
                   break;
                 case this.MODE_DRY:
@@ -382,8 +403,13 @@ export class AirConditioner {
                       mode:     this.MODE_DRY,
                       fanSpeed: this.FAN_SPEED_AUTO,
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
-                    }
-                  };
+                    },
+                  kind: 'service#command',
+                  deviceId: this.deviceId,
+                  serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+                  serviceType: 'cloud.smarthq.service.thermostat.v1',
+                  domainType: 'cloud.smarthq.domain.thermostat',
+                };
                   break;
                   // Default case handles Cool and Heat modes, which support all(?) fan speeds
                 default:
@@ -393,7 +419,12 @@ export class AirConditioner {
                     command: {
                       mode:     mode,
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
-                    }
+                    },
+                    kind: 'service#command',
+                    deviceId: this.deviceId,
+                    serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+                    serviceType: 'cloud.smarthq.service.thermostat.v1',
+                    domainType: 'cloud.smarthq.domain.thermostat',
                   };
               }
 
@@ -417,11 +448,16 @@ export class AirConditioner {
                 this.acThermostat.updateCharacteristic(this.Characteristic.Active, 0);
                 this.acThermostat.updateCharacteristic(this.Characteristic.CurrentHeaterCoolerState, 0);
 
-                const cmdBody: Record<string, unknown> = {
+                const cmdBody: SendCommandRequest = {
                   command: {
                     on: this.isOn,
                     commandType: 'cloud.smarthq.command.thermostat.v1.set',
-                  }
+                  },
+                  kind: 'service#command',
+                  deviceId: this.deviceId,
+                  serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+                  serviceType: 'cloud.smarthq.service.thermostat.v1',
+                  domainType: 'cloud.smarthq.domain.thermostat',
                 };
 
                 this.sendCommand(cmdBody);
@@ -517,11 +553,16 @@ export class AirConditioner {
                 service.updateCharacteristic(this.Characteristic.On, this.lastActiveMode === modeKey);
               }
 
-              const cmdBody: Record<string, unknown> = {
+              const cmdBody: SendCommandRequest = {
                 command: {
                   fanspeed: this.lastActiveFanSpeedMode,
                   commandType: 'cloud.smarthq.command.thermostat.v1.set',
-                }
+                },
+                kind: 'service#command',
+                deviceId: this.deviceId,
+                serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+                serviceType: 'cloud.smarthq.service.thermostat.v1',
+                domainType: 'cloud.smarthq.domain.thermostat',
               };
 
               this.sendCommand(cmdBody);
@@ -541,11 +582,16 @@ export class AirConditioner {
 
                 this.acThermostat.updateCharacteristic(this.Characteristic.Active, 0);
                 this.acThermostat.updateCharacteristic(this.Characteristic.CurrentHeaterCoolerState, 0);
-                const cmdBody: Record<string, unknown> = {
+                const cmdBody: SendCommandRequest = {
                   command: {
                     on: this.isOn,
                     commandType: 'cloud.smarthq.command.thermostat.v1.set',
-                  }
+                  },
+                  kind: 'service#command',
+                  deviceId: this.deviceId,
+                  serviceDeviceType: 'cloud.smarthq.device.airconditioner',
+                  serviceType: 'cloud.smarthq.service.thermostat.v1',
+                  domainType: 'cloud.smarthq.domain.thermostat',
                 };
 
                 this.sendCommand(cmdBody);
@@ -562,7 +608,7 @@ export class AirConditioner {
   // ---------------------------
   // API COMMAND SENDER
   // ---------------------------
-  private sendCommand(cmdBody: Record<string, unknown>) {
+  private sendCommand(cmdBody: SendCommandRequest) {
     if (this.debounceTimeout) {
       clearTimeout(this.debounceTimeout);
     }
@@ -573,7 +619,7 @@ export class AirConditioner {
     }, 150);
   }
 
-  private async executeSendCommand(command: Record<string, unknown>) {
+  private async executeSendCommand(command: SendCommandRequest) {
     const service = this.findService(
       'cloud.smarthq.service.thermostat.v1',
       'cloud.smarthq.domain.thermostat',
@@ -621,14 +667,8 @@ export class AirConditioner {
         */
 
       try {
-        const response = await this.client.sendCommand({
-          command: command,
-          kind: 'service#command',
-          deviceId: this.deviceId,
-          serviceDeviceType: 'cloud.smarthq.device.airconditioner',
-          serviceType: 'cloud.smarthq.service.thermostat.v1',
-          domainType: 'cloud.smarthq.domain.thermostat',
-        });
+        const response = await this.client.sendCommand(command);
+          
         if (response == null) {
           this.client.debug("No response from send command");
         } else {
