@@ -381,6 +381,8 @@ export class AirConditioner {
 
               // Handle behavior constraint: Fan Only mode does not support Auto Fan Speed - force Fan Speed to Low
               // Dry mode sets fan speed to Auto, which is valid. Only Fan Only mode needs to be adjusted.
+              
+
               let cmdBody: SendCommandRequest;
               switch (mode) {
                 case this.MODE_FANONLY:
@@ -401,7 +403,7 @@ export class AirConditioner {
                   cmdBody = {
                     command: {
                       mode:     this.MODE_DRY,
-                    //  fanSpeed: this.FAN_SPEED_AUTO,
+                    //  fanSpeed: this.FAN_SPEED_AUTO,    set to Auto by default for Dry mode, which is valid
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
                     },
                   kind: 'service#command',
@@ -521,6 +523,11 @@ export class AirConditioner {
           .onGet(() => this.isOn && this.lastActiveFanSpeedMode === fanspeedMode)
           .onSet(async (value) => {
             if (value) {
+              // If mode is Dry, then fan speed is automatically set to Auto and cannot be changed. 
+              if (this.lastActiveMode === this.MODE_DRY) {
+                return;
+              }
+
               // Handle behavior constraint: Fan Only mode does not support Auto Fan Speed
               if (
                 this.lastActiveMode === this.MODE_FANONLY &&
@@ -627,7 +634,7 @@ export class AirConditioner {
 
     if (!service) return;
 
-    this.commandQueue = this.commandQueue.then(async () => {
+    //this.commandQueue = this.commandQueue.then(async () => {
       /*
       const command: Record<string, unknown> = {
         commandType: 'cloud.smarthq.command.thermostat.v1.set',
@@ -675,15 +682,13 @@ export class AirConditioner {
           this.client.debug(
             "####  Response from send command : " + response.outcome,
           );
+          return response.success;
         }
       } catch (error) {
         this.platform.log.error(`Error sending command to AC:`, error);
       }
-    }).catch((err) => {
-      this.platform.log.error(`Error in AC command queue:`, err);
-    });
 
-    return this.commandQueue;
+    return true;
   }
 
   // ---------------------------
