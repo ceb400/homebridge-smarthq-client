@@ -214,7 +214,6 @@ export class AirConditioner {
          
 
           this.client.debug(chalk.yellow(`## Turning on AC:`));
-          this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
 
           this.sendCommand(cmdBody);
 
@@ -242,7 +241,6 @@ export class AirConditioner {
           };
 
           this.client.debug(chalk.yellow(`## Turning off AC:`));
-          this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
 
           this.sendCommand(cmdBody);
         }
@@ -299,7 +297,6 @@ export class AirConditioner {
           };
 
           this.client.debug(chalk.yellow('## Setting AC Temperature:'));
-          this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
 
         this.sendCommand(cmdBody);
       });
@@ -431,8 +428,6 @@ export class AirConditioner {
               }
 
               this.client.debug(chalk.yellow('## Setting AC Mode:'));
-              this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
-
 
               this.sendCommand(cmdBody);
             } else {
@@ -512,6 +507,7 @@ export class AirConditioner {
       }
 
       // Bind Fan Speed Outlets characteristics
+      let cmdBody: SendCommandRequest;
       for (const fanspeedMode of supportedFanSpeeds) {
         const [displayName] = this.getLastElementAndCapitalize(fanspeedMode, '.');
         const service = this.fanAccessory.getService(displayName)!;
@@ -528,7 +524,7 @@ export class AirConditioner {
                 return;
               }
 
-              // Handle behavior constraint: Fan Only mode does not support Auto Fan Speed
+              // Handle behavior constraint: Fan Only mode does not support Auto Fan Speed so return to last active fan speed mode if user tries to set Auto while in Fan Only mode
               if (
                 this.lastActiveMode === this.MODE_FANONLY &&
                 fanspeedMode === this.FAN_SPEED_AUTO
@@ -546,6 +542,7 @@ export class AirConditioner {
               this.isOn = true;
               this.lastActiveFanSpeedMode = fanspeedMode;
 
+              // Update all other fan speed outlets to OFF
               for (const [fanSpeed, service] of this.fanOutlets.entries()) {
                 if (fanSpeed !== fanspeedMode) {
                   service.updateCharacteristic(this.Characteristic.On, false);
@@ -560,11 +557,11 @@ export class AirConditioner {
                 service.updateCharacteristic(this.Characteristic.On, this.lastActiveMode === modeKey);
               }
 
-              const cmdBody: SendCommandRequest = {
+              cmdBody  = {
                 command: {
-                  mode:     this.lastActiveMode,
+                  mode: this.lastActiveMode,
                   fanspeed: this.lastActiveFanSpeedMode,
-                  commandType: 'cloud.smarthq.command.thermostat.v1.set',
+                  commandType: 'cloud.smarthq.command.thermostat.v1.set', 
                 },
                 kind: 'service#command',
                 deviceId: this.deviceId,
@@ -573,8 +570,7 @@ export class AirConditioner {
                 domainType: 'cloud.smarthq.domain.thermostat',
               };
 
-              this.client.debug(chalk.yellow('## Setting Fan Speed from mode:' + this.lastActiveMode));
-              this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
+              this.client.debug(chalk.yellow(`## Set Fan Speed to ${this.lastActiveFanSpeedMode} with mode: ${this.lastActiveMode}`));
 
               this.sendCommand(cmdBody);
             } else {
@@ -622,14 +618,18 @@ export class AirConditioner {
   async sendCommand(cmdBody: SendCommandRequest) {
     
     try {
+      this.client.debug('=======================');
+      this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
+      this.client.debug('=======================');
+
       const response = await this.client.sendCommand(cmdBody); // This command sets the mode and options
 
       if (response == null) {
-        this.client.debug("No response from setActive command");
+        this.client.debug("No response from send command");
         return false;
       } else {
         this.client.debug(
-          "=======================Response from set command : " + response.outcome,
+          "## Response from send command : " + response.outcome,
         );
         return response.success;
       }
