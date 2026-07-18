@@ -562,6 +562,7 @@ export class AirConditioner {
 
               const cmdBody: SendCommandRequest = {
                 command: {
+                  mode:     this.lastActiveMode,
                   fanspeed: this.lastActiveFanSpeedMode,
                   commandType: 'cloud.smarthq.command.thermostat.v1.set',
                 },
@@ -632,8 +633,18 @@ export class AirConditioner {
         );
         return response.success;
       }
-    } catch (error) {
-      console.warn("Error sending setActive command: " + error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+
+      this.platform.log.error("sendCommand failed", {
+        message,
+        stack,
+        raw: error,
+      });
+
+      this.client.debug(`sendCommand failed: ${message}`);
+      return false;
     }
   }
  /*
