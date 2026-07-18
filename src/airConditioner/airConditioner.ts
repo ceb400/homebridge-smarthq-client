@@ -572,6 +572,9 @@ export class AirConditioner {
                 domainType: 'cloud.smarthq.domain.thermostat',
               };
 
+              this.client.debug(chalk.yellow('## Setting Fan Speed from mode:' + this.lastActiveMode));
+              this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
+
               this.sendCommand(cmdBody);
             } else {
               // Toggling active fan speed OFF powers down system
@@ -615,17 +618,25 @@ export class AirConditioner {
   // ---------------------------
   // API COMMAND SENDER
   // ---------------------------
-  private sendCommand(cmdBody: SendCommandRequest) {
-    if (this.debounceTimeout) {
-      clearTimeout(this.debounceTimeout);
+  async sendCommand(cmdBody: SendCommandRequest) {
+    
+    try {
+      const response = await this.client.sendCommand(cmdBody); // This command sets the mode and options
+
+      if (response == null) {
+        this.client.debug("No response from setActive command");
+        return false;
+      } else {
+        this.client.debug(
+          "=======================Response from set command : " + response.outcome,
+        );
+        return response.success;
+      }
+    } catch (error) {
+      console.warn("Error sending setActive command: " + error);
     }
-
-    this.debounceTimeout = setTimeout(() => {
-      this.debounceTimeout = null;
-      this.executeSendCommand(cmdBody);
-    }, 150);
   }
-
+ /*
   private async executeSendCommand(command: SendCommandRequest) {
     const service = this.findService(
       'cloud.smarthq.service.thermostat.v1',
@@ -635,7 +646,7 @@ export class AirConditioner {
     if (!service) return;
 
     //this.commandQueue = this.commandQueue.then(async () => {
-      /*
+     
       const command: Record<string, unknown> = {
         commandType: 'cloud.smarthq.command.thermostat.v1.set',
       };
@@ -671,7 +682,7 @@ export class AirConditioner {
           command.coolFahrenheit = Math.round(clippedCelsius * 1.8 + 32);
         }
       }
-        */
+        
 
       try {
         const response = await this.client.sendCommand(command);
@@ -689,7 +700,7 @@ export class AirConditioner {
       }
 
     return true;
-  }
+  }*/
 
   // ---------------------------
   // WEBSOCKET UPDATES HANDLING
