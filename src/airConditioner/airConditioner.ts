@@ -401,7 +401,7 @@ export class AirConditioner {
                   cmdBody = {
                     command: {
                       mode:     this.MODE_DRY,
-                      fanSpeed: this.FAN_SPEED_AUTO,
+                    //  fanSpeed: this.FAN_SPEED_AUTO,
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
                     },
                   kind: 'service#command',
