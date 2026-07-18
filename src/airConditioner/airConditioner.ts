@@ -622,7 +622,7 @@ export class AirConditioner {
 
       try {
         const response = await this.client.sendCommand({
-          command,
+          command: command,
           kind: 'service#command',
           deviceId: this.deviceId,
           serviceDeviceType: 'cloud.smarthq.device.airconditioner',
