@@ -200,7 +200,6 @@ export class AirConditioner {
 
           const cmdBody = {
             command: {
-              on: this.isOn,
               mode: this.lastActiveMode || this.MODE_COOL,
               fanSpeed: this.lastActiveFanSpeedMode || this.FAN_SPEED_LOW,
               temperature: this.lastActiveCelsius || 22.22,
@@ -371,7 +370,6 @@ export class AirConditioner {
                 case this.MODE_FANONLY:
                   cmdBody = {
                     command: {
-                      on:       this.isOn,
                       mode:     this.MODE_FANONLY,  
                       fanSpeed: this.FAN_SPEED_LOW,
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
@@ -381,7 +379,6 @@ export class AirConditioner {
                 case this.MODE_DRY:
                   cmdBody = {
                     command: {
-                      on:       this.isOn,
                       mode:     this.MODE_DRY,
                       fanSpeed: this.FAN_SPEED_AUTO,
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
@@ -394,7 +391,6 @@ export class AirConditioner {
 
                   cmdBody = {
                     command: {
-                      on:       this.isOn,
                       mode:     mode,
                       commandType: 'cloud.smarthq.command.thermostat.v1.set',
                     }
