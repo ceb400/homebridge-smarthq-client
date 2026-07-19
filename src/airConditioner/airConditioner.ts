@@ -298,7 +298,12 @@ export class AirConditioner {
 
           this.client.debug(chalk.yellow('## Setting AC Temperature:'));
 
+        // When mode is Fan only then temperature changes are not allowed (returns an error)
+        // if mode = Fan only then bypass sending command
+        
+        if (this.lastActiveMode != this.MODE_FANONLY) {
         this.sendCommand(cmdBody);
+        }
       });
 
     this.acThermostat
