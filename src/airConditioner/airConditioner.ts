@@ -273,11 +273,12 @@ export class AirConditioner {
       .onGet(() => this.lastActiveCelsius)
       .onSet(async (value) => {
         // When mode is Fan only then temperature changes are not allowed (returns an error)
-        // Save prior temp value and update characteristic so Homekit is aware that no change should be made.
+        // Save prior temp value and update value so Homekit is aware that no change should be made.
         // if mode = Fan only then bypass sending command
         
         if (this.lastActiveMode === this.MODE_FANONLY) {
-          this.acThermostat.updateCharacteristic(this.Characteristic.CoolingThresholdTemperature, this.lastActiveCelsius);
+          this.acThermostat.getCharacteristic(this.Characteristic.CoolingThresholdTemperature)
+            .updateValue(this.lastActiveCelsius);
           return
         }
 

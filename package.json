@@ -1,6 +1,6 @@
 {
   "name": "homebridge-smarthq-client",
-  "version": "1.2.5-debug.14",
+  "version": "1.2.5-debug.15",
   "private": false,
   "description": "Plugin for controlling GE refrigerator, dishwasher, air conditioner via SmartHQ API.",
   "keywords": [
