@@ -311,8 +311,6 @@ export class AirConditioner {
             domainType: 'cloud.smarthq.domain.thermostat',
           };
 
-          this.client.debug(chalk.yellow('## Setting AC Temperature:'));
-
         this.sendCommand(cmdBody);
       });
 
@@ -441,8 +439,6 @@ export class AirConditioner {
                     domainType: 'cloud.smarthq.domain.thermostat',
                   };
               }
-
-              this.client.debug(chalk.yellow('## Setting AC Mode:'));
 
               this.sendCommand(cmdBody);
             } else {
@@ -585,8 +581,6 @@ export class AirConditioner {
                 domainType: 'cloud.smarthq.domain.thermostat',
               };
 
-              this.client.debug(chalk.yellow(`## Set Fan Speed to ${this.lastActiveFanSpeedMode} with mode: ${this.lastActiveMode}`));
-
               this.sendCommand(cmdBody);
             } else {
               // Toggling active fan speed OFF powers down system
@@ -624,7 +618,7 @@ export class AirConditioner {
     }
 
     // D. Add Debug State switch to parent accessory
-    this.addDebugState('cloud.smarthq.service.thermostat.v1');
+    //this.addDebugState('cloud.smarthq.service.thermostat.v1');
   }
 
   // ---------------------------
@@ -633,9 +627,6 @@ export class AirConditioner {
   async sendCommand(cmdBody: SendCommandRequest) {
     
     try {
-      this.client.debug('=======================');
-      this.client.debug(chalk.yellow(JSON.stringify(cmdBody, null, 2)));
-      this.client.debug('=======================');
 
       const response = await this.client.sendCommand(cmdBody); // This command sets the mode and options
 
@@ -643,9 +634,6 @@ export class AirConditioner {
         this.client.debug("No response from send command");
         return false;
       } else {
-        this.client.debug(
-          "## Response from send command : " + response.outcome,
-        );
         return response.success;
       }
     } catch (error: unknown) {
@@ -658,76 +646,10 @@ export class AirConditioner {
         raw: error,
       });
 
-      this.client.debug(`sendCommand failed: ${message}`);
       return false;
     }
   }
- /*
-  private async executeSendCommand(command: SendCommandRequest) {
-    const service = this.findService(
-      'cloud.smarthq.service.thermostat.v1',
-      'cloud.smarthq.domain.thermostat',
-    );
-
-    if (!service) return;
-
-    //this.commandQueue = this.commandQueue.then(async () => {
-     
-      const command: Record<string, unknown> = {
-        commandType: 'cloud.smarthq.command.thermostat.v1.set',
-      };
-      
-
-      // Only send the 'on' parameter if it is transitioning (prevents GE firmware from resetting to ECO)
-      if (!this.isOn) {
-        command.on = false;
-      } else if (!this.physicalOnState) {
-        command.on = true;
-      }
-
-      if (this.isOn) {
-        command.mode = this.lastActiveMode;
-
-        // Handle behavior constraint: Fan Only mode does not support Auto Fan Speed
-        if (
-          this.lastActiveMode === this.MODE_FANONLY &&
-          this.lastActiveFanSpeedMode === this.FAN_SPEED_AUTO
-        ) {
-          command.fanSpeed = this.FAN_SPEED_LOW;
-        } else {
-          command.fanSpeed = this.lastActiveFanSpeedMode;
-        }
-
-        // Omit coolFahrenheit in Fan Only mode (thermostat has no cooling setpoint)
-        if (this.lastActiveMode !== this.MODE_FANONLY) {
-          // Clip celsius to hardware bounds to prevent API errors
-          const clippedCelsius = Math.max(
-            this.coolCelsiusMin,
-            Math.min(this.coolCelsiusMax, this.lastActiveCelsius),
-          );
-          command.coolFahrenheit = Math.round(clippedCelsius * 1.8 + 32);
-        }
-      }
-        
-
-      try {
-        const response = await this.client.sendCommand(command);
-          
-        if (response == null) {
-          this.client.debug("No response from send command");
-        } else {
-          this.client.debug(
-            "####  Response from send command : " + response.outcome,
-          );
-          return response.success;
-        }
-      } catch (error) {
-        this.platform.log.error(`Error sending command to AC:`, error);
-      }
-
-    return true;
-  }*/
-
+ 
   // ---------------------------
   // WEBSOCKET UPDATES HANDLING
   // ---------------------------
