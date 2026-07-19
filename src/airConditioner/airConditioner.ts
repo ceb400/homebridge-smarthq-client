@@ -211,9 +211,7 @@ export class AirConditioner {
             serviceType: 'cloud.smarthq.service.thermostat.v1',
             domainType: 'cloud.smarthq.domain.thermostat',
           };
-         
-
-          this.client.debug(chalk.yellow(`## Turning on AC:`));
+      
 
           this.sendCommand(cmdBody);
 
@@ -272,14 +270,20 @@ export class AirConditioner {
       })
       .onGet(() => this.lastActiveCelsius)
       .onSet(async (value) => {
-        // When mode is Fan only then temperature changes are not allowed (returns an error)
-        // Save prior temp value and update value so Homekit is aware that no change should be made.
-        // if mode = Fan only then bypass sending command
+        // When mode is Fan only then temperature change indicates an attempt to cool
+        // so change mode to cool
         
         if (this.lastActiveMode === this.MODE_FANONLY) {
-          this.acThermostat.getCharacteristic(this.Characteristic.CoolingThresholdTemperature)
-            .updateValue(this.lastActiveCelsius);
-          return
+        // change mode to cool and update mode outlets
+          this.lastActiveMode = this.MODE_COOL;
+
+          for (const [modeKey, service] of this.modeOutlets.entries()) {
+            if (modeKey === this.lastActiveMode) {
+              service.updateCharacteristic(this.Characteristic.On, true);
+            } else {
+              service.updateCharacteristic(this.Characteristic.On, false);
+            }
+          }
         }
 
         this.lastActiveCelsius = value as number;
@@ -296,6 +300,7 @@ export class AirConditioner {
 
         const cmdBody = {
             command: {
+              mode: this.lastActiveMode,
               coolFahrenheit: coolFahrenheit,
               commandType: 'cloud.smarthq.command.thermostat.v1.set',
             },
