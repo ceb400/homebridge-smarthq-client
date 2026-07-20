@@ -77,7 +77,8 @@ export class Dishwasher {
      */
     this.client.on("service_update", (message: ServiceMessage) => {
       //this.client.debug(chalk.red('Wash Modes - Service Update:'+ JSON.stringify(message, null, 2)));
-      if (message.domainType === "cloud.smarthq.domain.energy" && message.deviceType === "cloud.smarthq.device.dishwasher") {
+      if (message.domainType === "cloud.smarthq.domain.energy" 
+        && message.deviceType === "cloud.smarthq.device.dishwasher") {
         this.client.debug('Interval Estimated energy for ' + message.deviceType + ' = ' + message.state?.meterValueDelta);
         this.energyMeterValuePerHour += (message.state?.meterValueDelta as number) || 0; // sum for the hour until reset
       }
@@ -447,6 +448,33 @@ export class Dishwasher {
         }
       });
     });
+
+    this.testCases();
+/*
+    for (const service of this.deviceServices) {
+      if (
+        service.serviceDeviceType === "cloud.smarthq.device.dishwasher" &&
+        service.serviceType === "cloud.smarthq.service.dishwasher.state.v1" &&
+        service.domainType === "cloud.smarthq.domain.dishwasher"
+      ) {
+        try {
+          const response = await this.client.getServiceDetails(
+            this.deviceId,
+            service.serviceId,
+          );
+          if (response?.state == null) {
+            this.client.debug("No response from get state - abort test");
+            break;
+          }
+        } catch (error) {
+          this.client.debug("Error getting test: " + error);
+          break;
+        }
+
+        //const originalPresetMode = response?.state.
+      }
+    }
+      */
   }
 
   /**
@@ -1051,5 +1079,63 @@ export class Dishwasher {
     this.client.debug(chalk.red("Bottle Wash:     " + this.currentbottleWash));
     this.client.debug(chalk.red("Steam:           " + this.currentSteam));
     this.client.debug(chalk.red("Silverware Wash: " + this.currentSilverwareWash));
+  }
+
+  async testCases() {
+    //======================================================
+    // Develop test plan for dishwasher
+    //    1. save current state info to restore following test
+    //.   2. for each preset mode:
+    //       a. set the mode and record result of command
+    //       b. for each water temp
+    //          1. set the water temp and record result of command
+    //.      c. delay for 5 sec interval
+    //    3. restore values to original state
+    //======================================================
+    let originalMode: string;
+    let originalWashTemp: string;
+
+    const modes = ['Heavy', 'AutoSense', 'Normal'];
+    const temp = ['Hot', 'Warm', 'Chilly'];
+    this.client.debug(' ## Start Test cases ##');
+    this.client.debug(' ##     Save current device configuration ##');
+    for (const service of this.deviceServices) {
+      if (
+        service.serviceDeviceType === "cloud.smarthq.device.dishwasher" &&
+        service.serviceType === "cloud.smarthq.service.dishwasher.state.v1" &&
+        service.domainType === "cloud.smarthq.domain.dishwasher"
+      ) {
+        try {
+          const response = await this.client.getServiceDetails(
+            this.deviceId,
+            service.serviceId,
+          );
+          if (response?.state == null) {
+            this.client.debug("No response from get state - abort test");
+            return;
+          } 
+          //this.client.debug(JSON.stringify(response, null, 2));
+          originalMode = response?.state.mode as string;
+          originalWashTemp = response?.state.washTemp as string;
+          this.client.debug('---------------------------------------------------------');
+          this.client.debug(chalk.green(`Pre test state = mode:${originalMode}  washTemp:${originalWashTemp}`));
+          this.client.debug('---------------------------------------------------------');
+        } catch (error) {
+          this.client.debug("Error getting test: " + error);
+          return;
+        }
+
+        //const originalPresetMode = response?.state.
+      }
+    }
+    for (const mode of modes) {
+      this.client.debug(` ##     Setting mode to ${mode} ##`);
+      for (const waterTemp of temp) {
+        this.client.debug(` ##         Setting temp to ${waterTemp} ##`);
+        await new Promise(resolve => setTimeout(resolve, 4000));
+      }
+    }
+
+    this.client.debug(' ##     Restore original device configuration ##');
   }
 }
