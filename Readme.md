@@ -57,6 +57,9 @@ The SmartHQ API uses an OAuth 2.0 authentication process. The steps required to 
 * Follow the steps at  [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/)  
   (The Callback URL specified in step 2.4 must match the corresponding field in the plugin config setup (recommended http://localhost:8888/callback)
 
+      OR
+  The alternative for Raspberry pi OS users with no desktop/browser it to the follow the Step 3 in [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/)   to obtain the tokens via Postman and copy the tokens to the file where they are stored. See Initial Authentication section for file name and format.
+
 * When step 2 from Get Started is complete and you have created an app, click on the app to display your   apps page. Find the Credentials tab and copy the **Client Id**, **Client Secret** and **Callback URL** to the plugin config.
 ## Configuration
 
@@ -110,6 +113,10 @@ Or manually edit the config file with
 
 
 ## Initial Authentication
+- If an access token and refresh token have been created using the instructions of Step 3 [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/) they can be copied to the corresponding fields in a file named 'smarthq.tokens.json' and saved in the current working directory of the NodeJS process (usually ~/.homebridge/).  A sample file can be obtained from the repository as 'smarthq.tokens.json'.
+- If the smarthq.tokens.json file is created manually the log messages shown below will not appear since an access token is available.
+
+
 (*If access token does not exist*). Check the Homebridge log for a highlighted localhost URL.
 ```
 ======================================================================= 
@@ -122,9 +129,7 @@ Once an access (and refresh) token have been saved this step will only be needed
 used to store your tokens is deleted. 
 When an access token expires the plugin will use the refresh token to obtain a new access token automatically.
 
-## (for Raspberry pi OS users) ##
-To complete the authentication flow will require the Raspberry pi OS to have a desktop and browser installed.
-For assistance in installing these components please see this [article](https://raspberrytips.com/upgrade-raspbian-lite-to-desktop/)
+
 
 ## Notifications (for refrigerators)
 
@@ -145,8 +150,14 @@ These switches will appear in Accessories as *Alert Door*, *Alert Temp*, *Alert 
 
 [SmartHQ Documentation](https://developer.smarthq.com/)
 
+[SmartHQ Data Model](https://docs.smarthq.com/data-model/overview/)
+
 ## Notes 
-(for refrigerator) 
+(for air conditioners)  
+For air conditioner models that support a DRY mode if the user attempts to change the temperature while in DRY mode, the mode will be set to COOL and the temperature will be adjusted.
+
+(for refrigerator)
+
 The *water filter maintenance* option uses the Filter Maintenance Service in the Homebridge API.  
 The service exists in HomeKit but has not been implemented in the Apple Home app.   
 If selected in the plugin config you will notice a tile on the Homebridge Accessories page but there   
@@ -159,7 +170,6 @@ will not be any tile/device shown in the Home app.
 
 [donavanbecker](https://github.com/donavanbecker) for the excellent 'ge-smarthq' pkg.  
 [evan robert](https://github.com/actuallyevan)    for contributing air conditioner device code
-GE SmartHQ API Client
 
 
 ## Feedback
