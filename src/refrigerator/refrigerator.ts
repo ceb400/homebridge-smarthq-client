@@ -288,7 +288,7 @@ export class Refrigerator {
     try {
       await this.client.connect();
     } catch (error) {
-      console.log(
+      this.platform.log.warn(
         "Failed to connect to SmartHQ WebSocket during platform initialization: " + error,
       );
     }

@@ -46,7 +46,7 @@ export class TemperatureUnits {
       }
     }
     if (!hasTemperatureUnits) {
-      console.log('[SmartHq] No supported Temperature Units service found for device: ' + this.accessory.displayName);
+      this.platform.log.warn('[SmartHq] No supported Temperature Units service found for device: ' + this.accessory.displayName);
       return;
     }
     this.client.debug('Adding Temperature Units Switches');

@@ -52,7 +52,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', async () => {
       const tstamp = new Date().toLocaleString('en-US');
 
-      console.log(
+      this.log.info(
         chalk.blue(
           `[${tstamp}] [Smarthq] Homebridge finished launching, starting SmartHQ authentication...`,
         ),
