@@ -49,6 +49,9 @@ export class Dishwasher {
     "cloud.smarthq.domain.dishwasher.brand.cascade.platinumplus";
   private readonly RINSE_MODE = "cloud.smarthq.domain.dishwasher.rinse";
 
+  
+  
+
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
@@ -229,7 +232,7 @@ export class Dishwasher {
       .onGet(this.handleNameGet.bind(this));
 
     //=====================================================================================
-    // create a new Lightbulb service for the Cycle % Done
+    // create a new Lightbulb service for the Cycle Pct Done
     //=====================================================================================
     displayName = "Cycle Pct Done";
     const cyclePct =
@@ -262,7 +265,7 @@ export class Dishwasher {
       })
       .onSet((value) => {
         this.currentSteam = value as boolean;
-        this.client.debug("Setting Steam option to " + value);
+        this.testSetMode({steam: value as boolean})
       });
 
     /**
@@ -285,7 +288,7 @@ export class Dishwasher {
       })
       .onSet((value) => {
         this.currentbottleWash = value as boolean;
-        this.client.debug("Setting Bottlewash option to " + value);
+        this.testSetMode({bottle: value as boolean})
       });
 
     /**
@@ -308,7 +311,7 @@ export class Dishwasher {
       })
       .onSet((value) => {
         this.currentSilverwareWash = value as boolean;
-        this.client.debug("Setting Silverware option to " + value);
+        this.testSetMode({silverware: this.currentSilverwareWash});
       });
 
     /**
@@ -336,6 +339,7 @@ export class Dishwasher {
 
         if (value === true) {
           this.currentWashTemp = this.washTempMap.get(service.displayName) || "";
+          this.testSetMode({temp: this.currentWashTemp});
           // Turn others off
           temps.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
@@ -371,6 +375,7 @@ export class Dishwasher {
 
         if (value === true) {
           this.currentHeatedDry = this.heatedDryMap.get(service.displayName) || "";
+          this.testSetMode({dry: this.currentHeatedDry});
           // Turn others off
           drymodes.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
@@ -406,6 +411,7 @@ export class Dishwasher {
 
         if (value === true) {
           this.currentWashZone = this.washZoneMap.get(service.displayName) || "";
+          this.testSetMode({zone: this.currentWashZone});
           // Turn others off
           zones.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
@@ -434,22 +440,25 @@ export class Dishwasher {
       service.getCharacteristic(this.Characteristic.On).onSet((value) => {
         if (value === true) {
           this.currentPreset = this.presetMap.get(service.displayName) || "";
-          this.logCurrentOptions();
+          //this.logCurrentOptions();
+          this.testSetMode({mode: this.currentPreset});
+          
           // Turn others off
           presets.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
+              this.client.debug('Turning off for ' + otherService.displayName);
               otherService.updateCharacteristic(this.Characteristic.On, false);
             }
           });
+          
           this.client.debug("Setting Preset Mode to " + service.displayName);
-        } else {
-          // Optional: Prevent turning off if you want "always one on" logic
-          service.updateCharacteristic(this.Characteristic.On, true);
-        }
+        } 
       });
     });
 
-    this.testCases();
+
+    // NOTE:  only for developing a method for testing command combinations.
+    // this.testCases();
 /*
     for (const service of this.deviceServices) {
       if (
@@ -631,10 +640,12 @@ export class Dishwasher {
             this.deviceId,
             service.serviceId,
           );
+          /*
           this.client.debug(
             "================ Response from getServiceDetails for mode get: " +
               JSON.stringify(response, null, 2),
           );
+          */
           if (response?.state?.mode == null) {
             this.client.debug("No response from getmodenormal command");
             return false;
@@ -686,27 +697,30 @@ export class Dishwasher {
     }
     const pctDone =
       100 - Math.round((this.timeRemainingFromWebSocket / this.totalSeconds) * 100) || 0;
-    this.client.debug("Wash Modes - Calculated Cycle % Done: " + pctDone + "%");
+
+    this.setCyclePct(pctDone);
+    
+    this.client.debug("Wash Modes - Calculated Cycle Pct Done: " + pctDone + "%");
     if (this.timeRemainingFromWebSocket === 0) {
       this.accessory
-        .getService("Cycle % Done")
+        .getService("Cycle Pct Done")
         ?.getCharacteristic(this.Characteristic.On)
         .updateValue(false);
     } else {
       this.accessory
-        .getService("Cycle % Done")
+        .getService("Cycle Pct Done")
         ?.getCharacteristic(this.Characteristic.On)
         .updateValue(true);
-      this.accessory
-        .getService("Cycle % Done")
-        ?.getCharacteristic(this.Characteristic.Brightness)
-        .updateValue(pctDone);
+
+      this.accessory.getService("Cycle Pct Done")?.updateCharacteristic(this.Characteristic.Brightness, pctDone);
     }
     return pctDone;
   }
 
   async setCyclePct(value: CharacteristicValue) {
-    // not writable from HomeKit, so no implementation needed, but must be defined to prevent errors
+    this.accessory
+        .getService("Cycle Pct Done")
+        ?.updateCharacteristic(this.Characteristic.Brightness, value);
     return value;
   }
 
@@ -819,7 +833,7 @@ export class Dishwasher {
           return response.success;
         }
       } catch (error) {
-        console.warn("Error sending setActive command: " + error);
+        this.platform.log.warn("Error sending setActive command: " + error);
       }
     }
   }
@@ -857,7 +871,7 @@ export class Dishwasher {
         return response.success;
       }
     } catch (error) {
-      console.warn("Error sending startCycle command: " + error);
+      this.platform.log.warn("Error sending startCycle command: " + error);
       return false;
     }
   }
@@ -896,7 +910,7 @@ export class Dishwasher {
         return response.success;
       }
     } catch (error) {
-      console.warn("Error sending stopCycle command: " + error);
+      this.platform.log.warn("Error sending stopCycle command: " + error);
       return false;
     }
   }
@@ -1064,7 +1078,7 @@ export class Dishwasher {
     try {
       await this.client.connect();
     } catch (error) {
-      console.log(
+      this.platform.log.warn(
         "Failed to connect to SmartHQ WebSocket during platform initialization: " + error,
       );
     }
@@ -1094,9 +1108,11 @@ export class Dishwasher {
     //======================================================
     let originalMode: string;
     let originalWashTemp: string;
+    let modesAvailable: [string] = [''];
+    const washTempBase = 'cloud.smarthq.type.dishwasher.washtemp.';
 
-    const modes = ['Heavy', 'AutoSense', 'Normal'];
-    const temp = ['Hot', 'Warm', 'Chilly'];
+    //const modes = ['Heavy', 'AutoSense', 'Normal'];
+    const temp = ['none', 'boost', 'sani', 'saniandboost'];
     this.client.debug(' ## Start Test cases ##');
     this.client.debug(' ##     Save current device configuration ##');
     for (const service of this.deviceServices) {
@@ -1114,9 +1130,13 @@ export class Dishwasher {
             this.client.debug("No response from get state - abort test");
             return;
           } 
-          //this.client.debug(JSON.stringify(response, null, 2));
+          this.client.debug(JSON.stringify(response, null, 2));
+
           originalMode = response?.state.mode as string;
           originalWashTemp = response?.state.washTemp as string;
+
+          modesAvailable = response?.config?.regularModeAvailable as [string];
+
           this.client.debug('---------------------------------------------------------');
           this.client.debug(chalk.green(`Pre test state = mode:${originalMode}  washTemp:${originalWashTemp}`));
           this.client.debug('---------------------------------------------------------');
@@ -1128,14 +1148,74 @@ export class Dishwasher {
         //const originalPresetMode = response?.state.
       }
     }
-    for (const mode of modes) {
-      this.client.debug(` ##     Setting mode to ${mode} ##`);
-      for (const waterTemp of temp) {
-        this.client.debug(` ##         Setting temp to ${waterTemp} ##`);
-        await new Promise(resolve => setTimeout(resolve, 4000));
+    for (const mode of modesAvailable) {
+      try {
+        const response = await this.testSetMode({mode: mode});
+        if (response === true) {
+          this.client.debug(chalk.green(` ##     Setting mode to ${mode} ##  Outcome: ${chalk.greenBright('Valid')}`));
+        } else {
+          this.client.debug(chalk.green(` ##     Setting mode to ${mode} ##  Outcome: ${chalk.red('Invalid command')}`));
+        }
+        for (const waterTemp of temp) {
+          this.client.debug(chalk.greenBright(` ##         Setting temp to ${washTempBase}${waterTemp} ##`));
+          await new Promise(resolve => setTimeout(resolve, 4000));
+        }
+      }  catch (error) {
+        this.platform.log.warn("Error sending setActive command: " + error);
+        return false;
       }
     }
-
+    
     this.client.debug(' ##     Restore original device configuration ##');
+  }
+  
+  async testSetMode({mode,
+                    temp,
+                    dry,
+                    zone,
+                    bottle,
+                    steam,
+                    silverware
+  }:                {mode?: string,
+                    temp?: string,
+                    dry?:  string,
+                    zone?: string,
+                    bottle?: boolean,
+                    steam?: boolean,
+                    silverware?: boolean
+  })
+  {
+    const 
+        cmdBody = {
+          command: {
+            washTemp: temp || this.currentWashTemp,
+            heatedDry: dry || this.currentHeatedDry,
+            washZone: zone || this.currentWashZone,
+            bottleWash: bottle || this.currentbottleWash,
+            steam: steam|| this.currentSteam,
+            silverwareWash: silverware || this.currentSilverwareWash,
+            commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
+          },
+          deviceId: this.deviceId,
+          domainType: mode || this.currentPreset,
+          kind: "service#command",
+          serviceDeviceType: "cloud.smarthq.device.dishwasher",
+          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
+        };
+
+        try {
+          const response = await this.client.sendCommand(cmdBody); // This command sets the mode and options
+
+          if (response == null) {
+            this.client.debug("No response from setMode command");
+            return false;
+          } 
+          this.client.debug('Set mode ${mode} outcome: ' + response.success)
+          return response.success;
+        
+      } catch (error) {
+        this.platform.log.warn("Error sending setActive command: " + error);
+        return false;
+      }
   }
 }
