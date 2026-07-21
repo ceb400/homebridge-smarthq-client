@@ -203,6 +203,7 @@ export class AirConditioner {
               mode: this.lastActiveMode || this.MODE_COOL,
               fanSpeed: this.lastActiveFanSpeedMode || this.FAN_SPEED_LOW,
               temperature: this.lastActiveCelsius || 22.22,
+              on: this.isOn,
               commandType: 'cloud.smarthq.command.thermostat.v1.set',
             },
             kind: 'service#command',
