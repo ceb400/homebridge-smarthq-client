@@ -113,7 +113,7 @@ Or manually edit the config file with
 
 
 ## Initial Authentication
-- If an access token and refresh token have been created using the instructions of Step 3 [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/) they can be copied to the corresponding fields in a file named 'smarthq.tokens.json' and saved in the current working directory of the NodeJS process (usually ~/.homebridge/).  A sample file can be obtained from the repository as 'smarthq.tokens.json'.
+- If an access token and refresh token have been created using the instructions of Step 3 [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/) they can be copied to the corresponding fields in a file named 'smarthq.tokens.json' and saved in the current working directory of the NodeJS process (usually *~/.homebridge/* or */var/lib/homebridge/*).  A sample file can be obtained from the repository as 'smarthq.tokens.json'.
 - If the smarthq.tokens.json file is created manually the log messages shown below will not appear since an access token is available.
 
 

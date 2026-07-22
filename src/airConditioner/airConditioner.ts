@@ -21,6 +21,8 @@ export class AirConditioner {
   private debounceTimeout: NodeJS.Timeout | null = null;
 
   private currentAmbientCelsius = 22.22;
+  private disposed = false;
+  private readonly serviceUpdateListener: (message: ServiceMessage) => void;
 
   // Configuration thresholds
   private coolCelsiusMin = 17.77;
@@ -82,6 +84,16 @@ export class AirConditioner {
       debug: platform.config.debugLogging || false,
     });
 
+    this.serviceUpdateListener = (message: ServiceMessage) => {
+      if (message.deviceId !== this.deviceId) return;
+      if (
+        message.domainType !== 'cloud.smarthq.domain.thermostat' &&
+        message.domainType !== 'cloud.smarthq.domain.indoor.ambient'
+      ) return;
+
+      this.handleUpdate(message);
+    };
+
     // 1. Find services and initialize local variables
     const thermostatService = this.findService(
       'cloud.smarthq.service.thermostat.v1',
@@ -131,15 +143,7 @@ export class AirConditioner {
     this.setupWebSocket();
 
     // 3. Register WebSocket real-time subscription
-    this.client.on('service_update', (message: ServiceMessage) => {
-      if (message.deviceId !== this.deviceId) return;
-      if (
-        message.domainType !== 'cloud.smarthq.domain.thermostat' &&
-        message.domainType !== 'cloud.smarthq.domain.indoor.ambient'
-      ) return;
-
-      this.handleUpdate(message);
-    });
+    this.client.on('service_update', this.serviceUpdateListener);
   }
 
   // ---------------------------
@@ -201,8 +205,6 @@ export class AirConditioner {
           const cmdBody = {
             command: {
               mode: this.lastActiveMode || this.MODE_COOL,
-            //  fanSpeed: this.lastActiveFanSpeedMode || this.FAN_SPEED_LOW,
-            //  temperature: this.lastActiveCelsius || 22.22,
               on: this.isOn,
               commandType: 'cloud.smarthq.command.thermostat.v1.set',
             },
@@ -730,6 +732,31 @@ export class AirConditioner {
     } catch (error) {
       this.platform.log.error(
         `Failed to connect to SmartHQ WebSocket for AC ${this.deviceId}:`,
+        error,
+      );
+    }
+  }
+
+  public async dispose(): Promise<void> {
+    if (this.disposed) return;
+    this.disposed = true;
+
+    try {
+      this.client.removeListener('service_update', this.serviceUpdateListener);
+    } catch {
+      // best-effort cleanup
+    }
+
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout);
+      this.debounceTimeout = null;
+    }
+
+    try {
+      await this.client.disconnect();
+    } catch (error) {
+      this.platform.log.error(
+        `Failed to disconnect SmartHQ client for AC ${this.deviceId}:`,
         error,
       );
     }

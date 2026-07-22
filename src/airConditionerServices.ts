@@ -4,5 +4,5 @@ import { SmartHqPlatform }    from './platform.js';
 import { DeviceService }      from 'ge-smarthq-api';
 
 export function setupAirConditionerServices(this: SmartHqPlatform, accessory: PlatformAccessory, deviceServices: DeviceService[], deviceId: string, groupAccessory?: PlatformAccessory[]) {
-  new AirConditioner(this, accessory, deviceServices, deviceId, groupAccessory ?? []);
+  return new AirConditioner(this, accessory, deviceServices, deviceId, groupAccessory ?? []);
 }

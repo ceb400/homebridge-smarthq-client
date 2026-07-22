@@ -15,9 +15,12 @@ import chalk from 'chalk';
 import { setupDishwasherServices } from './dishwasherServices.js';
 import { setupRefrigeratorServices } from './refrigeratorServices.js';
 import { setupAirConditionerServices } from './airConditionerServices.js';
+import { AirConditioner } from './airConditioner/airConditioner.js';
 
 export class SmartHqPlatform implements DynamicPlatformPlugin {
   private client: SmartHQClient;
+
+  private readonly airConditioners = new Map<string, AirConditioner>();
 
   // Use Set instead of array (critical fix)
   private readonly discoveredCacheUUIDs = new Set<string>();
@@ -60,6 +63,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
 
       try {
         this.debug('red', '(SmartHQ OAuth2 authentication starting)');
+        this.debug('white', 'Using ' + process.cwd() + '/smarthq.token.json');
         await this.client.authenticate();
         this.debug('blue', '(SmartHQ OAuth2 authentication succeeded)');
       } catch (error) {
@@ -214,13 +218,17 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
             );
 
             this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
-            setupAirConditionerServices.call(
+            const airConditioner = setupAirConditionerServices.call(
               this,
               accessoryType!,
               deviceServices,
               device.deviceId,
               [groupModesUuid!, groupFanUuid!],
             );
+
+            if (airConditioner) {
+              this.airConditioners.set(device.deviceId, airConditioner);
+            }
             break;
           }
 
@@ -245,6 +253,15 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       for (const [uuid, accessory] of this.accessories) {
         if (!this.discoveredCacheUUIDs.has(uuid)) {
           this.log.info('Removing existing accessory from cache:', accessory.displayName);
+
+          // Dispose any associated AirConditioner instance before removing the accessory
+          for (const [deviceId, airConditioner] of this.airConditioners.entries()) {
+            const parentUuid = this.api.hap.uuid.generate(`smarthq-${deviceId}`);
+            if (parentUuid === uuid) {
+              await airConditioner.dispose();
+              this.airConditioners.delete(deviceId);
+            }
+          }
 
           this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
             accessory,
