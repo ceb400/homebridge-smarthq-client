@@ -48,7 +48,6 @@ export class Refrigerator {
     this.client.on("service_update", (message: ServiceMessage) => {
       //this.client.debug(chalk.red('Wash Modes - Service Update:'+ JSON.stringify(message, null, 2)));
       if (message.domainType === "cloud.smarthq.domain.energy" && message.deviceType === "cloud.smarthq.device.refrigerator") {
-        this.client.debug('Interval Estimated energy for ' + message.deviceType + ' = ' + message.state?.meterValueDelta);
         this.energyMeterValuePerHour += (message.state?.meterValueDelta as number) || 0; // sum for the hour until reset
       }
     });

@@ -68,9 +68,11 @@ export class RefrigeratorAlerts {
     this.client.on('presence', (message: PresenceMessage) => {
       this.client.debug(message.deviceType + ' presence update: ' + JSON.stringify(message.presence));
     });
+    /*
     this.client.on('command_outcome', (message: string) => {
       this.client.debug('Refrig-Alerts Command Outcome:'+ JSON.stringify(message, null, 2));
     });
+    */
 
     this.client.debug('Adding alert/notification Switches');
     // set accessory information

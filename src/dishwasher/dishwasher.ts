@@ -82,7 +82,6 @@ export class Dishwasher {
       //this.client.debug(chalk.red('Wash Modes - Service Update:'+ JSON.stringify(message, null, 2)));
       if (message.domainType === "cloud.smarthq.domain.energy" 
         && message.deviceType === "cloud.smarthq.device.dishwasher") {
-        this.client.debug('Interval Estimated energy for ' + message.deviceType + ' = ' + message.state?.meterValueDelta);
         this.energyMeterValuePerHour += (message.state?.meterValueDelta as number) || 0; // sum for the hour until reset
       }
 
@@ -700,7 +699,6 @@ export class Dishwasher {
 
     this.setCyclePct(pctDone);
     
-    this.client.debug("Wash Modes - Calculated Cycle Pct Done: " + pctDone + "%");
     if (this.timeRemainingFromWebSocket === 0) {
       this.accessory
         .getService("Cycle Pct Done")
@@ -826,12 +824,9 @@ export class Dishwasher {
         if (response == null) {
           this.client.debug("No response from setActive command");
           return false;
-        } else {
-          this.client.debug(
-            "=======================Response from set command : " + response.outcome,
-          );
-          return response.success;
-        }
+        } 
+        return response.success;
+
       } catch (error) {
         this.platform.log.warn("Error sending setActive command: " + error);
       }
