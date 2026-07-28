@@ -113,8 +113,10 @@ Or manually edit the config file with
 
 
 ## Initial Authentication
-- If an access token and refresh token have been created using the instructions of Step 3 [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/) they can be copied to the corresponding fields in a file named 'smarthq.tokens.json' and saved in the current working directory of the NodeJS process (usually *~/.homebridge/* or */var/lib/homebridge/*).  A sample file can be obtained from the repository as 'smarthq.tokens.json'.
+- If an access token and refresh token have been created using the instructions of Step 3 [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/) they can be copied to the corresponding fields in a file named 'smarthq.tokens.json' and saved in the current working directory of the NodeJS process (usually *~/.homebridge/* or */var/lib/homebridge/*).  A sample file can be obtained from the repository as 'smarthq.tokens.json'. 
+- Both access and refresh tokens must be copied to the token file.
 - If the smarthq.tokens.json file is created manually the log messages shown below will not appear since an access token is available.
+
 
 
 (*If access token does not exist*). Check the Homebridge log for a highlighted localhost URL.
@@ -169,7 +171,7 @@ will not be any tile/device shown in the Home app.
 ## Acknowledgements
 
 [donavanbecker](https://github.com/donavanbecker) for the excellent 'ge-smarthq' pkg.  
-[evan robert](https://github.com/actuallyevan)    for contributing air conditioner device code
+[evan robert](https://github.com/actuallyevan)    for contributing initial air conditioner device code
 
 
 ## Feedback
