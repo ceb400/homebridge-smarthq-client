@@ -99,12 +99,6 @@ export class Dishwasher {
         }
         this.timeRemainingFromWebSocket =
           (message.state?.secondsRemaining as number) || 0;
-        this.client.debug(
-          "Wash Modes - Seconds remaining from WebSocket: " +
-            this.timeRemainingFromWebSocket +
-            " Total seconds: " +
-            this.totalSeconds,
-        );
         this.getCyclePct();
       }
       if (message.state?.mode != null) {
