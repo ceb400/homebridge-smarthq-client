@@ -52,7 +52,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', async () => {
       const tstamp = new Date().toLocaleString('en-US');
 
-      console.log(
+      this.log.info(
         chalk.blue(
           `[${tstamp}] [Smarthq] Homebridge finished launching, starting SmartHQ authentication...`,
         ),
@@ -91,141 +91,145 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       const deviceList = await this.client.getDevices();
 
       for (const device of deviceList.devices) {
+        try {
           this.log.info(
             chalk.yellow(
-              `SmartHQ Discovered device: ${device.nickname} Model: ${device.model} Type: ${device.deviceType}`
+              `SmartHQ Discovered device: ${device.nickname} Model: ${device.model} Type: ${device.deviceType}`,
             ),
           );
 
-        const response = await this.client.getDevice(device.deviceId);
-        const deviceServices = response.services ?? [];
+          const response = await this.client.getDevice(device.deviceId);
+          const deviceServices = response.services ?? [];
 
-        const sortedServices = deviceServices.sort((a, b) => {
-          if (a.serviceDeviceType < b.serviceDeviceType) return -1;
-          if (a.serviceDeviceType > b.serviceDeviceType) return 1;
-          return 0;
-        });
+          const sortedServices = deviceServices.sort((a, b) => {
+            if (a.serviceDeviceType < b.serviceDeviceType) return -1;
+            if (a.serviceDeviceType > b.serviceDeviceType) return 1;
+            return 0;
+          });
 
-        if (
-          (this.config.debugServicesFridge && device.deviceType === 'cloud.smarthq.device.refrigerator') ||
-          (this.config.debugServicesDishwasher && device.deviceType === 'cloud.smarthq.device.dishwasher') ||
-          this.config.debugServicesAll 
-        ) {
-          for (const service of sortedServices) {
-            this.log.info(chalk.yellow('ServiceId         = ' + service.serviceId));
-            this.log.info(chalk.yellow('ServiceDeviceType = ' + service.serviceDeviceType));
-            this.log.info(chalk.yellow('ServiceType       = ' + service.serviceType));
-            this.log.info(chalk.yellow('Domain            = ' + service.domainType));
+          if (
+            (this.config.debugServicesFridge && device.deviceType === 'cloud.smarthq.device.refrigerator') ||
+            (this.config.debugServicesDishwasher && device.deviceType === 'cloud.smarthq.device.dishwasher') ||
+            this.config.debugServicesAll
+          ) {
+            for (const service of sortedServices) {
+              this.log.info(chalk.yellow('ServiceId         = ' + service.serviceId));
+              this.log.info(chalk.yellow('ServiceDeviceType = ' + service.serviceDeviceType));
+              this.log.info(chalk.yellow('ServiceType       = ' + service.serviceType));
+              this.log.info(chalk.yellow('Domain            = ' + service.domainType));
 
+              try {
+                const response = await this.client.getServiceDetails(
+                  device.deviceId,
+                  service.serviceId,
+                );
 
-        try {
-          const response = await this.client.getServiceDetails(
-            device.deviceId,
-            service.serviceId,
+                if (response?.state == null) {
+                  this.client.debug('No response from getServiceDetails');
+                  continue;
+                }
+                this.log.info(chalk.yellow('Config            = ' + JSON.stringify(response.config, null, 2)));
+              } catch (error) {
+                this.client.debug(`Error getting service details: ${error}`);
+                continue;
+              }
+            }
+          }
+
+          const accessoryType = this.getAccessoryByDeviceId(
+            device,
+            '',
+            device.nickname, // FIX 4: remove deviceId from name
           );
 
-          if (response?.state == null) {
-            this.client.debug("No response from gettest command");
-            return false;
+          // Dishwasher group accessories
+          if (device.deviceType === 'cloud.smarthq.device.dishwasher') {
+            this.debug(
+              'blue',
+              `Creating group accessory for dishwasher modes for device ${device.nickname}`,
+            );
+
+            const groupTemperatureUuid = this.getAccessoryByDeviceId(
+              device,
+              `tempmodes-${device.deviceId}`, // FIX 5: template string fixed
+              'Wash Temps',
+            );
+
+            const groupDryerUuid = this.getAccessoryByDeviceId(
+              device,
+              `drymodes-${device.deviceId}`,
+              'Dry Levels',
+            );
+
+            const groupZoneUuid = this.getAccessoryByDeviceId(
+              device,
+              `zonemodes-${device.deviceId}`,
+              'Wash Zones',
+            );
+
+            const groupPresetsUuid = this.getAccessoryByDeviceId(
+              device,
+              `washmodes-${device.deviceId}`,
+              'Preset Modes',
+            );
+
+            this.groupAccessoryArray = [
+              groupTemperatureUuid!,
+              groupDryerUuid!,
+              groupZoneUuid!,
+              groupPresetsUuid!,
+            ];
           }
-          this.log.info(chalk.yellow('Config            = ' + JSON.stringify(response.config, null, 2)));
+
+          switch (device.deviceType) {
+            case 'cloud.smarthq.device.refrigerator':
+              this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
+              setupRefrigeratorServices.call(this, accessoryType!, deviceServices, device.deviceId);
+              break;
+
+            case 'cloud.smarthq.device.dishwasher':
+              this.debug('blue', `Setting up Dishwasher services for ${device.nickname}`);
+              setupDishwasherServices.call(
+                this,
+                accessoryType!,
+                deviceServices,
+                device.deviceId,
+                this.groupAccessoryArray,
+              );
+              break;
+
+            case 'cloud.smarthq.device.airconditioner': {
+              this.debug('green', `Creating group accessories for air conditioner modes and fan speeds for device ${device.nickname}`);
+
+              const groupModesUuid = this.getAccessoryByDeviceId(
+                device,
+                `acmodes-${device.deviceId}`,
+                'AC Mode',
+              );
+
+              const groupFanUuid = this.getAccessoryByDeviceId(
+                device,
+                `acfan-${device.deviceId}`,
+                'AC Fan',
+              );
+
+              this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
+              setupAirConditionerServices.call(
+                this,
+                accessoryType!,
+                deviceServices,
+                device.deviceId,
+                [groupModesUuid!, groupFanUuid!],
+              );
+              break;
+            }
+
+            default:
+              this.debug('red', `not implemented device : for device ${device.nickname}`);
+          }
         } catch (error) {
-          this.client.debug("Error getting test: " + error);
-          return false;
-        }
-          }
-        }
-
-        const accessoryType = this.getAccessoryByDeviceId(
-          device,
-          '',
-          device.nickname, // FIX 4: remove deviceId from name
-        );
-
-        // Dishwasher group accessories
-        if (device.deviceType === 'cloud.smarthq.device.dishwasher') {
-          this.debug(
-            'blue',
-            `Creating group accessory for dishwasher modes for device ${device.nickname}`,
-          );
-
-          const groupTemperatureUuid = this.getAccessoryByDeviceId(
-            device,
-            `tempmodes-${device.deviceId}`, // FIX 5: template string fixed
-            'Wash Temps',
-          );
-
-          const groupDryerUuid = this.getAccessoryByDeviceId(
-            device,
-            `drymodes-${device.deviceId}`,
-            'Dry Levels',
-          );
-
-          const groupZoneUuid = this.getAccessoryByDeviceId(
-            device,
-            `zonemodes-${device.deviceId}`,
-            'Wash Zones',
-          );
-
-          const groupPresetsUuid = this.getAccessoryByDeviceId(
-            device,
-            `washmodes-${device.deviceId}`,
-            'Preset Modes',
-          );
-
-          this.groupAccessoryArray = [
-            groupTemperatureUuid!,
-            groupDryerUuid!,
-            groupZoneUuid!,
-            groupPresetsUuid!,
-          ];
-        }
-
-        switch (device.deviceType) {
-          case 'cloud.smarthq.device.refrigerator':
-            this.debug('green', `Setting up Refrigerator services for ${device.nickname}`);
-            setupRefrigeratorServices.call(this, accessoryType!, deviceServices, device.deviceId);
-            break;
-
-          case 'cloud.smarthq.device.dishwasher':
-            this.debug('blue', `Setting up Dishwasher services for ${device.nickname}`);
-            setupDishwasherServices.call(
-              this,
-              accessoryType!,
-              deviceServices,
-              device.deviceId,
-              this.groupAccessoryArray,
-            );
-            break;
-
-          case 'cloud.smarthq.device.airconditioner': {
-            this.debug('green', `Creating group accessories for air conditioner modes and fan speeds for device ${device.nickname}`);
-
-            const groupModesUuid = this.getAccessoryByDeviceId(
-              device,
-              `acmodes-${device.deviceId}`,
-              'AC Mode',
-            );
-
-            const groupFanUuid = this.getAccessoryByDeviceId(
-              device,
-              `acfan-${device.deviceId}`,
-              'AC Fan',
-            );
-
-            this.debug('green', `Setting up Air Conditioner services for ${device.nickname}`);
-            setupAirConditionerServices.call(
-              this,
-              accessoryType!,
-              deviceServices,
-              device.deviceId,
-              [groupModesUuid!, groupFanUuid!],
-            );
-            break;
-          }
-
-          default:
-            this.debug('red', `not implemented device : for device ${device.nickname}`);
+          this.log.error(chalk.red(`Failed to process device ${device.nickname}`), error);
+          continue;
         }
       }
 
