@@ -336,3 +336,4 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
     }
   }
 }
+
