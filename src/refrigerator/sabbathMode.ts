@@ -46,7 +46,7 @@ export class SabbathMode {
       }
     }
     if (!hasSabbathMode) {
-      console.log('[SmartHq] No supported Sabbath Mode service found for device: ' + this.accessory.displayName);
+      this.platform.log.warn('[SmartHq] No supported Sabbath Mode service found for device: ' + this.accessory.displayName);
       return;
     }
     this.client.debug('Adding Sabbath Mode Switch');
