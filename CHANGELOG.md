@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 - **FanOnly** mode does not allow FanSpeed mode of Auto
 - Setting mode to **Dry** will set FanSpeed mode of Low
 - In mode **FanOnly** when user changes Temperature, the mode will be switched to **Cool** and temp change will apply
+- Decrease amount of log messages in debug mode
+- Improve error handling routines
 
 ## [1.2.5](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.5) (2026-07-15)
 - Merge beta branch into main branch
