@@ -5,12 +5,7 @@
 
 * setup for automated workflows ([cb9e52c](https://github.com/ceb400/homebridge-smarthq-client/commit/cb9e52cc9c9cb7da17f4fb893e797b4ddae22ceb))
 
-## [1.2.2](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.2.1...v1.2.2) (2026-08-24)
 
-
-### Bug Fixes
-
-* setup for automated workflows ([cb9e52c](https://github.com/ceb400/homebridge-smarthq-client/commit/cb9e52cc9c9cb7da17f4fb893e797b4ddae22ceb))
 
 # Changelog
 
