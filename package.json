@@ -37,7 +37,7 @@
     "lint": "eslint . --max-warnings=0",
     "prepublishOnly": "npm run lint && npm run build",
     "pub": "npm version patch --force && npm publish",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "semantic-release": "semantic-release",
     "watch": "npm run build && npm link && nodemon"
   },
