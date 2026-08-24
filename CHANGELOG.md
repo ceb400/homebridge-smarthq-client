@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.7](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.7) (2026-08-24)
+- Use original ge-smarthq library now that it is being maintained 
+- implement workflows to automate versioning
+
 ## [1.2.6](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.6) (2026-07-19)
 - Handle cases for: 
 - **FanOnly** mode does not allow FanSpeed mode of Auto
