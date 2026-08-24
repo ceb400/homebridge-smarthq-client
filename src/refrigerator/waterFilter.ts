@@ -1,5 +1,5 @@
 import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq-api';
+import { SmartHQClient, DeviceService } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
 
 

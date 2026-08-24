@@ -5,7 +5,7 @@ import {
   Characteristic,
 } from 'homebridge';
 
-import { SmartHQClient, DeviceService, SendCommandRequest } from 'ge-smarthq-api';
+import { SmartHQClient, DeviceService, SendCommandRequest } from 'ge-smarthq';
 import { SmartHqPlatform } from '../platform.js';
 import { ServiceMessage } from '../index.js';
 import chalk from 'chalk';

@@ -17,7 +17,7 @@ import { WaterFilter }        from './refrigerator/waterFilter.js';
 import { RefrigeratorAlerts } from './refrigerator/refrigeratorAlerts.js';
 import { PlatformAccessory }  from 'homebridge';
 import { SmartHqPlatform }    from './platform.js';
-import { DeviceService }      from 'ge-smarthq-api';
+import { DeviceService }      from 'ge-smarthq';
 
 
   export function setupRefrigeratorServices(this: SmartHqPlatform, accessory: PlatformAccessory, deviceServices: DeviceService[], deviceId: string) {
