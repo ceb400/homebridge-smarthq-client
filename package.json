@@ -91,7 +91,12 @@
           "changelogFile": "CHANGELOG.md"
         }
       ],
-      "@semantic-release/npm",
+      [
+        "@semantic-release/npm",
+        {
+          "npmPublish": false
+        }
+      ],
       [
         "@semantic-release/git",
         {
@@ -107,8 +112,8 @@
     ]
   },
   "engines": {
-    "node": "^20.18.0 || ^22.10.0 || ^24.0.0",
-    "homebridge": "^1.8.0 || ^2.0.0-beta.0"
+    "node": "^22.10.0 || ^24.0.0",
+    "homebridge": "^2.0.0-beta.0"
   },
   "displayName": "Homebridge GE SmartHQ client"
 }
