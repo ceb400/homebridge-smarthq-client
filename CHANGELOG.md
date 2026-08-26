@@ -1,3 +1,10 @@
+## [1.2.9](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.2.8...v1.2.9) (2026-08-26)
+
+
+### Bug Fixes
+
+* :bug: fix: plugin hangs if error occurs in device discovery ([56d1c06](https://github.com/ceb400/homebridge-smarthq-client/commit/56d1c0604483ccb9b0837cdf19b977a1c802f3d7))
+
 ## [1.2.8](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.2.7...v1.2.8) (2026-08-24)
 
 
