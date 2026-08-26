@@ -79,7 +79,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
   // =========================================================
   // DEVICE DISCOVERY
   // =========================================================
-  async discoverDevices() {
+  async discoverDevices(retryCount = 0) {
     // prevent duplicate concurrent discovery runs
     if (this.discovering) return;
     this.discovering = true;
@@ -256,6 +256,14 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
 
           this.accessories.delete(uuid); // FIX 6: keep map in sync
         }
+      }
+    } catch (error) {
+      this.log.error(chalk.red(`Error during device discovery attempt ${retryCount + 1} of 5`), error);
+
+      if (retryCount < 5) {
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+        this.discovering = false;
+        await this.discoverDevices(retryCount + 1);
       }
     } finally {
       this.discovering = false;
