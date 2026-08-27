@@ -90,18 +90,23 @@ export class WaterFilter {
       if (service.serviceDeviceType === 'cloud.smarthq.device.waterfilter' 
         && service.serviceType      === 'cloud.smarthq.service.mode') {
 
-        const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
-        if (response?.state?.mode == null) {
-          console.debug('[SmartHq] No state.mode returned from getWaterFilterChangeIndication state');
+        try {
+          const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
+          if (response?.state?.mode == null) {
+            console.debug('[SmartHq] No state.mode returned from getWaterFilterChangeIndication state');
+            return false;
+          }
+          if (response?.state?.mode  === 'cloud.smarthq.type.mode.good'
+            || response?.state?.mode === 'cloud.smarthq.type.mode.bypass'
+            || response?.state?.mode === 'cloud.smarthq.type.mode.expiringsoon'
+          ) {
+              filterStatus = this.Characteristic.FilterChangeIndication.FILTER_OK;
+          } else {
+              filterStatus = this.Characteristic.FilterChangeIndication.CHANGE_FILTER;
+          }
+        } catch (error) {
+          console.error('[SmartHq] Error getting water filter change indication:', error);
           return false;
-        }
-        if (response?.state?.mode  === 'cloud.smarthq.type.mode.good'
-          || response?.state?.mode === 'cloud.smarthq.type.mode.bypass'
-          || response?.state?.mode === 'cloud.smarthq.type.mode.expiringsoon'
-        ) {
-            filterStatus = this.Characteristic.FilterChangeIndication.FILTER_OK;
-        } else {
-            filterStatus = this.Characteristic.FilterChangeIndication.CHANGE_FILTER;
         }
       }
     }
