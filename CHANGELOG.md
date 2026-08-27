@@ -1,3 +1,10 @@
+## [1.2.10](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.2.9...v1.2.10) (2026-08-27)
+
+
+### Bug Fixes
+
+* :bug: fix: unhandled error in waterfilter.ts ([4a2a3cc](https://github.com/ceb400/homebridge-smarthq-client/commit/4a2a3cc2512c2bd699a9e8f9268af794e6d2ba91))
+
 ## [1.2.9](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.2.8...v1.2.9) (2026-08-26)
 
 
