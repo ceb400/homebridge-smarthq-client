@@ -48,9 +48,24 @@ export class Dishwasher {
   private readonly PLATPLUS_MODE =
     "cloud.smarthq.domain.dishwasher.brand.cascade.platinumplus";
   private readonly RINSE_MODE = "cloud.smarthq.domain.dishwasher.rinse";
+  private readonly CLEAN_MODE = "cloud.smarthq.domain.dishwasher.clean";
+  private readonly LIGHT_MODE = "cloud.smarthq.domain.dishwasher.light";
 
-  
-  
+  //========  wash zone constants  ========
+  private readonly BOTH_ZONE = "cloud.smarthq.type.dishwasher.washzone.both";
+  private readonly LOWER_ZONE = "cloud.smarthq.type.dishwasher.washzone.lower";
+  private readonly UPPER_ZONE = "cloud.smarthq.type.dishwasher.washzone.upper";
+
+  //========  heated dry constants  ========
+  private readonly NONE_DRY = "cloud.smarthq.type.dishwasher.heateddry.none";
+  private readonly MAX_DRY = "cloud.smarthq.type.dishwasher.heateddry.maxdry";
+  private readonly ADDED_DRY = "cloud.smarthq.type.dishwasher.heateddry.addedheat";
+
+  //========  wash temperature constants  ========
+  private readonly NONE_TEMP = "cloud.smarthq.type.dishwasher.washtemp.none";
+  private readonly BOOST_TEMP = "cloud.smarthq.type.dishwasher.washtemp.boost";
+  private readonly SANI_TEMP = "cloud.smarthq.type.dishwasher.washtemp.sani";
+  private readonly SANI_AND_BOOST_TEMP = "cloud.smarthq.type.dishwasher.washtemp.saniandboost";
 
   constructor(
     private readonly platform: SmartHqPlatform,
@@ -120,6 +135,12 @@ export class Dishwasher {
             break;
           case this.RINSE_MODE:
             this.handleModeGet(this.RINSE_MODE);
+            break;
+          case this.CLEAN_MODE:
+            this.handleModeGet(this.CLEAN_MODE);
+            break;
+          case this.LIGHT_MODE:
+            this.handleModeGet(this.LIGHT_MODE);
             break;
           default:
             this.client.debug("Unknown mode: " + message.state.mode);
@@ -323,16 +344,25 @@ export class Dishwasher {
 
     temps.forEach((service, index) => {
       service.getCharacteristic(this.Characteristic.On).onSet((value) => {
-        this.client.debug(
-          "Wash Temp mode " +
-            service.displayName +
-            " set to " +
-            this.washTempMap.get(service.displayName),
-        );
-
+        
         if (value === true) {
-          this.currentWashTemp = this.washTempMap.get(service.displayName) || "";
-          this.testSetMode({temp: this.currentWashTemp});
+          switch (service.displayName) {
+            case "None":
+              this.currentWashTemp = this.NONE_TEMP;
+              break;
+            case "Boost":
+              this.currentWashTemp = this.BOOST_TEMP;
+              break;
+            case "Sani":
+              this.currentWashTemp = this.SANI_TEMP;
+              break;
+            case "Saniandboost":
+              this.currentWashTemp = this.SANI_AND_BOOST_TEMP;
+              break;
+            default:
+              this.currentWashTemp = this.NONE_TEMP;
+          }
+      
           // Turn others off
           temps.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
@@ -343,7 +373,29 @@ export class Dishwasher {
           // Optional: Prevent turning off if you want "always one on" logic
           service.updateCharacteristic(this.Characteristic.On, true);
         }
+        this.client.debug("Wash Temp mode set to " + this.currentWashTemp);
+
       });
+      // Set initial state of wash temperature based on which service is currently on
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "None":
+            this.currentWashTemp = this.NONE_TEMP;
+            break;
+          case "Boost":
+            this.currentWashTemp = this.BOOST_TEMP;
+            break;
+          case "Sani":
+            this.currentWashTemp = this.SANI_TEMP;
+            break;
+          case "Saniandboost":
+            this.currentWashTemp = this.SANI_AND_BOOST_TEMP;
+            break;
+          default:
+            this.currentWashTemp = this.NONE_TEMP;
+        }
+        this.client.debug("Initial Wash Temperature set to " + this.currentWashTemp);
+      } 
     });
 
     this.client.debug(chalk.green("Dry Mode options"));
@@ -359,16 +411,21 @@ export class Dishwasher {
 
     drymodes.forEach((service, index) => {
       service.getCharacteristic(this.Characteristic.On).onSet((value) => {
-        this.client.debug(
-          "Dry Temp mode " +
-            service.displayName +
-            " set to " +
-            this.heatedDryMap.get(service.displayName),
-        );
-
+        
         if (value === true) {
-          this.currentHeatedDry = this.heatedDryMap.get(service.displayName) || "";
-          this.testSetMode({dry: this.currentHeatedDry});
+          switch (service.displayName) {
+          case "None":
+            this.currentHeatedDry = this.NONE_DRY;
+            break;
+          case "Addedheat":
+            this.currentHeatedDry = this.ADDED_DRY;
+            break;
+          case "Maxdry":
+            this.currentHeatedDry = this.MAX_DRY;
+            break;
+          default:
+            this.currentHeatedDry = this.NONE_DRY;
+        }
           // Turn others off
           drymodes.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
@@ -379,7 +436,26 @@ export class Dishwasher {
           // Optional: Prevent turning off if you want "always one on" logic
           service.updateCharacteristic(this.Characteristic.On, true);
         }
+        this.client.debug("Dry Temp mode set to " + this.currentHeatedDry);
+
       });
+      // Set initial state of currentHeatedDry based on which service is currently on
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "None":
+            this.currentHeatedDry = this.NONE_DRY;
+            break;
+          case "Addedheat":
+            this.currentHeatedDry = this.ADDED_DRY;
+            break;
+          case "Maxdry":
+            this.currentHeatedDry = this.MAX_DRY;
+            break;
+          default:
+            this.currentHeatedDry = this.NONE_DRY;
+        }
+        this.client.debug("Initial Heated Dry set to " + this.currentHeatedDry);
+      }
     });
 
     this.client.debug(chalk.green("Wash Zone Modes options"));
@@ -395,16 +471,21 @@ export class Dishwasher {
 
     zones.forEach((service, index) => {
       service.getCharacteristic(this.Characteristic.On).onSet((value) => {
-        this.client.debug(
-          "Wash Zone mode " +
-            service.displayName +
-            " set to " +
-            this.washZoneMap.get(service.displayName),
-        );
-
         if (value === true) {
-          this.currentWashZone = this.washZoneMap.get(service.displayName) || "";
-          this.testSetMode({zone: this.currentWashZone});
+          switch (service.displayName) {
+            case "Both":
+              this.currentWashZone = this.BOTH_ZONE;
+              break;
+            case "Lower":
+                this.currentWashZone = this.LOWER_ZONE;
+                break;
+            case "Upper":
+              this.currentWashZone = this.UPPER_ZONE;
+              break;
+            default:
+              this.currentWashZone = this.BOTH_ZONE;
+          }
+          this.client.debug("Setting Wash Zone to " + this.currentWashZone);
           // Turn others off
           zones.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
@@ -415,7 +496,28 @@ export class Dishwasher {
           // Optional: Prevent turning off if you want "always one on" logic
           service.updateCharacteristic(this.Characteristic.On, true);
         }
+        this.client.debug(
+          "Wash Zone mode set to " + this.currentWashZone);
+
       });
+      // Set initial state of currentWashZone based on which service is currently on
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "Both":
+            this.currentWashZone = this.BOTH_ZONE;
+            break;
+          case "Lower":
+              this.currentWashZone = this.LOWER_ZONE;
+              break;
+          case "Upper":
+            this.currentWashZone = this.UPPER_ZONE;
+            break;
+          default:
+            this.currentWashZone = this.BOTH_ZONE;
+        }
+      
+        this.client.debug("Initial Wash Zone set to " + this.currentWashZone);
+      }
     });
 
     this.client.debug(chalk.green("Preset Mode options"));
@@ -432,22 +534,80 @@ export class Dishwasher {
     presets.forEach((service, index) => {
       service.getCharacteristic(this.Characteristic.On).onSet((value) => {
         if (value === true) {
-          this.currentPreset = this.presetMap.get(service.displayName) || "";
-          //this.logCurrentOptions();
-          this.testSetMode({mode: this.currentPreset});
-          
+          switch (service.displayName) {
+            case "Normal":
+              this.currentPreset = this.NORMAL_MODE;
+              break;
+            case "Heavy":
+              this.currentPreset = this.HEAVY_MODE;
+              break;
+            case "AutoSense":
+              this.currentPreset = this.AUTOSENSE_MODE;
+              break;
+            case "Rinse":
+              this.currentPreset = this.RINSE_MODE;
+              break;
+            case "Platinumplus":
+              this.currentPreset = this.PLATPLUS_MODE;
+              break;
+            case "Light":
+              this.currentPreset = this.LIGHT_MODE;
+              break;
+            case "Cleaning":
+              this.currentPreset = this.CLEAN_MODE;
+              break;
+            case "1 Hour":
+              this.currentPreset = this.ONE_HOUR_MODE;
+              break;
+            default:
+              this.currentPreset = this.NORMAL_MODE;
+          }
+          this.client.debug("Setting Preset Mode to " + this.currentPreset); 
           // Turn others off
           presets.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
-              this.client.debug('Turning off for ' + otherService.displayName);
               otherService.updateCharacteristic(this.Characteristic.On, false);
             }
           });
+        }
+      }); 
           
-          this.client.debug("Setting Preset Mode to " + service.displayName);
-        } 
-      });
+     
+      // Set initial state of currentPreset based on which service is currently on
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "Normal":
+            this.currentPreset = this.NORMAL_MODE;
+            break;
+          case "Heavy":
+              this.currentPreset = this.HEAVY_MODE;
+              break;
+          case "AutoSense":
+            this.currentPreset = this.AUTOSENSE_MODE;
+            break;
+          case "Rinse":
+            this.currentPreset = this.RINSE_MODE;
+            break;
+          case "Platinumplus":
+            this.currentPreset = this.PLATPLUS_MODE;
+            break;
+          case "Light":
+            this.currentPreset = this.LIGHT_MODE;
+            break;
+          case "Cleaning":
+            this.currentPreset = this.CLEAN_MODE;
+            break;
+          case "1 Hour":
+            this.currentPreset = this.ONE_HOUR_MODE;
+            break;
+          default:
+            this.currentPreset = this.NORMAL_MODE;
+        }
+        this.client.debug("Initial Preset Mode set to " + this.currentPreset);
+      }
     });
+
+    
 
 
     // NOTE:  only for developing a method for testing command combinations.
@@ -778,6 +938,39 @@ export class Dishwasher {
 
         break;
       case this.ONE_HOUR_MODE:
+        cmdBody = {
+          command: {
+            washZone: this.currentWashZone,
+            heatedDry: this.currentHeatedDry,
+            bottleWash: this.currentbottleWash,
+            silverwareWash: this.currentSilverwareWash,
+            commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
+          },
+          deviceId: this.deviceId,
+          domainType: this.currentPreset,
+          kind: "service#command",
+          serviceDeviceType: "cloud.smarthq.device.dishwasher",
+          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
+        };
+        validCommand = true;
+
+        break;
+      case this.CLEAN_MODE:
+        cmdBody = {
+          command: {
+            washTemp: this.currentWashTemp,
+            commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
+          },
+          deviceId: this.deviceId,
+          domainType: this.currentPreset,
+          kind: "service#command",
+          serviceDeviceType: "cloud.smarthq.device.dishwasher",
+          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
+        };
+        validCommand = true;
+
+        break;
+      case this.LIGHT_MODE:
         cmdBody = {
           command: {
             washZone: this.currentWashZone,
