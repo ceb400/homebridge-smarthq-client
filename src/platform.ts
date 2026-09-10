@@ -15,6 +15,7 @@ import chalk from 'chalk';
 import { setupDishwasherServices } from './dishwasherServices.js';
 import { setupRefrigeratorServices } from './refrigeratorServices.js';
 import { setupAirConditionerServices } from './airConditionerServices.js';
+import { setupDehumidifierServices } from './dehumidifierServices.js';
 
 export class SmartHqPlatform implements DynamicPlatformPlugin {
   private client: SmartHQClient;
@@ -221,6 +222,12 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
                 device.deviceId,
                 [groupModesUuid!, groupFanUuid!],
               );
+              break;
+            }
+
+            case 'cloud.smarthq.device.dehumidifier': {
+              this.debug('green', `Setting up Dehumidifier services for ${device.nickname}`);
+              setupDehumidifierServices.call(this, accessoryType!, deviceServices, device.deviceId);
               break;
             }
 
