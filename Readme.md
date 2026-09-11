@@ -6,6 +6,7 @@ A homebridge plugin for GE appliances using the SmartHQ API s (Identity and Acce
 * refrigerator
 * dishwasher
 * air conditioner
+* dehumidifier
 * Other devices will be discovered and service information could be written to the log to assist in adding support for more devices.
 
 The refrigerator services include controls for:
@@ -33,6 +34,14 @@ The air conditioner services include controls for:
 * AC temperature
 * AC fan speed
 * AC modes (Cool, ECO, Dry, Fan Only)
+
+The dehumidifier services include controls for:
+* Target humidity
+* Current humidity
+* Fan speed
+* Filter Maintenance
+* Leak Sensor
+* Continuous mode switch
 
 
 
@@ -157,6 +166,9 @@ These switches will appear in Accessories as *Alert Door*, *Alert Temp*, *Alert 
 ## Notes 
 (for air conditioners)  
 For air conditioner models that support a DRY mode if the user attempts to change the temperature while in DRY mode, the mode will be set to COOL and the temperature will be adjusted.
+
+(for dehumidifiers)
+Model used is GE 25 pt. Residential Dehumidifier ADSE25WWT 
 
 (for refrigerator)
 
