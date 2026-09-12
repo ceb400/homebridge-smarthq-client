@@ -23,7 +23,7 @@ jobs:
       - name: Generate Beta Tag Version
         id: versioning
         run: |
-          BASE_VERSION="1.0.0"
+          BASE_VERSION="1.3.0"
           BUILD_NUMBER=$(git rev-list --count HEAD)
           TAG_NAME="v${BASE_VERSION}-beta.${BUILD_NUMBER}"
           
