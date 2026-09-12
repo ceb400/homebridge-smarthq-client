@@ -1,0 +1,46 @@
+name: Auto Beta Release
+
+on:
+  push:
+    branches:
+      - beta
+      env:
+        
+  TAG_NAME: "" 
+
+jobs:
+  create-beta:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Beta Tag Version
+        id: versioning
+        run: |
+          BASE_VERSION="1.0.0"
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          TAG_NAME="v${BASE_VERSION}-beta.${BUILD_NUMBER}"
+          
+          # Writing to GITHUB_ENV makes it available to later steps
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "Generated Tag: $TAG_NAME"
+
+      - name: Create GitHub Pre-Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Adding quotes around the expression satisfies the VS Code schema validator
+          tag_name: "${{ env.TAG_NAME }}"
+          name: "Beta Release ${{ env.TAG_NAME }}"
+          body: |
+            Automated beta release compiled from branch `beta`.
+            
+            **Latest Commit:** ${{ github.sha }}
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -105,6 +105,16 @@
         "title": "Add Control Lock Control",
         "default": false
       },
+      "humidityMin": {
+        "type": "integer",
+        "title": "Minimum Humidity Threshold",
+        "default": 35
+      },
+      "humidityMax": {
+        "type": "integer",
+        "title": "Maximum Humidity Threshold",
+        "default": 80
+      },
       "debugLogging": {
         "type": "boolean",
         "title": "Plugin Debug Logging w/Chalk Colors",
@@ -142,6 +152,21 @@
             "clientId",
             "clientSecret",
             "redirectUri"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Dehumidifier Settings",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "description": "Include the selected dehumidifier settings.",
+          "items": [
+            "humidityMin",
+            "humidityMax"
           ]
         }
       ]

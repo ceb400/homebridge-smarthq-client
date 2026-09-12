@@ -60,8 +60,8 @@ export class Dehumidifier {
   private bucketFull = false;
   private filterNeedsCleaning = false;
 
-  private humidityMin = 35;
-  private humidityMax = 80;
+  private humidityMin: number;
+  private humidityMax: number;
 
   private disposed = false;
   private readonly serviceUpdateListener: (message: ServiceMessage) => void;
@@ -96,6 +96,10 @@ export class Dehumidifier {
       redirectUri: platform.config.redirectUri,
       debug: platform.config.debugLogging || false,
     });
+
+    // Initialize humidity thresholds from config
+    this.humidityMin = (platform.config.humidityMin as number) ?? 35;
+    this.humidityMax = (platform.config.humidityMax as number) ?? 80;
 
     // ---- Seed initial state from discovery snapshot ----
     const thermostat = this.findService(this.SVC_THERMOSTAT, this.DOM_THERMOSTAT);
