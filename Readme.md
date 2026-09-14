@@ -67,21 +67,23 @@ The SmartHQ API uses an OAuth 2.0 authentication process. The steps required to 
   (The Callback URL specified in step 2.4 must match the corresponding field in the plugin config setup (recommended http://localhost:8888/callback)
 
       OR
-  The alternative for Raspberry pi OS users with no desktop/browser it to the follow the Step 3 in [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/)   to obtain the tokens via Postman and copy the tokens to the file where they are stored. See Initial Authentication section for file name and format.
+  The alternative for Raspberry pi OS users with no desktop/browser is to the follow the Step 3 in [Get Started - SmartHQ Docs](https://docs.smarthq.com/get-started/)   to obtain the tokens via Postman and copy the tokens to the file where they are stored. See Initial Authentication section for file name and format.
 
 * When step 2 from Get Started is complete and you have created an app, click on the app to display your   apps page. Find the Credentials tab and copy the **Client Id**, **Client Secret** and **Callback URL** to the plugin config.
 ## Configuration
 
 Use the Homebridge UI to configure this plugin. See **Requirements** for steps to obtain a Client Id and Client Secret.
 
-* Select the services you want to add for the appliance in the plugin config.
+* Select the device types you want to exclude/prevent from creating Homekit services.
+
+* Select the services you want to add for the appliance (dishwasher, refrigerator) in the plugin config.
 
 * Select Logging options.  
-   * *Plugin Debug Logging*  will log additional messages to the Homebridge log.
-   * *Display Service Details for all discovered device services* will log sorted information about all services for each discovered device.  
+   * **Plugin Debug Logging**  will log additional messages to the Homebridge log.
+   * **Display Service Details for all discovered device services** will log sorted information about all services for each discovered device.  
     (This info is used to add support for other appliances.) 
-  *  *Display Service Details for only refrigerator services* will only log sorted information about all services for refrigerator. 
-   * *Display Service Details for only dishwasher services* will only log sorted information about all services for dishwasher. 
+  *  **Display Service Details for only refrigerator services** will only log sorted information about all services for refrigerator. 
+   * **Display Service Details for only dishwasher services** will only log sorted information about all services for dishwasher. 
 
 * Save plugin config and restart child bridge.
 
@@ -184,6 +186,7 @@ will not be any tile/device shown in the Home app.
 
 [donavanbecker](https://github.com/donavanbecker) for the excellent 'ge-smarthq' pkg.  
 [evan robert](https://github.com/actuallyevan)    for contributing initial air conditioner device code
+[colemccarron](https://github.com/colemccarron)   for contributing initial dehumidifier code
 
 
 ## Feedback

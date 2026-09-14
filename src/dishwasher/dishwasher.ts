@@ -48,8 +48,25 @@ export class Dishwasher {
   private readonly PLATPLUS_MODE =
     "cloud.smarthq.domain.dishwasher.brand.cascade.platinumplus";
   private readonly RINSE_MODE = "cloud.smarthq.domain.dishwasher.rinse";
+  private readonly CLEANING_MODE = "cloud.smarthq.domain.dishwasher.dishwasher.cleaning";
+  private readonly LIGHT_MODE = "cloud.smarthq.domain.dishwasher.light";
 
-  
+  //========  wash temp constants  ========
+  private readonly NONE = "cloud.smarthq.domain.washtemp.none";
+  private readonly BOOST = "cloud.smarthq.domain.washtemp.boost";
+  private readonly SANI = "cloud.smarthq.domain.washtemp.sani";
+  private readonly SANIANDBOOST = "cloud.smarthq.domain.washtemp.saniandboost";
+
+  //========  wash zone constants  ========
+  private readonly BOTH = "cloud.smarthq.domain.washzone.both";
+  private readonly UPPER = "cloud.smarthq.domain.washzone.upper";
+  private readonly LOWER = "cloud.smarthq.domain.washzone.lower";
+
+  //========  heated dry constants  ========
+  private readonly NOHEAT = "cloud.smarthq.domain.heateddry.none";
+  private readonly ADDEDHEAT = "cloud.smarthq.domain.heateddry.addedheat";
+  private readonly MAXDRY = "cloud.smarthq.domain.heateddry.maxdry";
+
   
 
   constructor(
@@ -72,6 +89,15 @@ export class Dishwasher {
       redirectUri: platform.config.redirectUri,
       debug: platform.config.debugLogging || false,
     });
+
+    // Check if dishwasher service is excluded from config
+    if (this.platform.config.excludeDishwasherServices) {
+      this.platform.log.info(chalk.yellow(`Dishwasher service is excluded from config. Clearing old UUIDs for ${this.deviceId}`));
+      // Clear old services from cache before returning
+      this.clearOldServices(this.accessory);
+      this.groupAccessory.forEach(accessory => this.clearOldServices(accessory));
+      return;
+    }
 
     this.setupWebSocket();
 
@@ -146,6 +172,10 @@ export class Dishwasher {
       this.getAvailableItemsByType("heatedDryAvailable");
 
     const presetModes: [string, string][] = this.getAvailablePresets();
+
+    // Clear old services from cache before adding new services
+    this.clearOldServices(this.accessory);
+    this.groupAccessory.forEach(accessory => this.clearOldServices(accessory));
 
     // set accessory information
     this.accessory
@@ -449,6 +479,92 @@ export class Dishwasher {
       });
     });
 
+    // Sync state variables with service characteristics reflecting last known state
+    temps.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "NONE":
+            this.currentWashTemp = this.NONE;
+            break;
+          case "BOOST":
+            this.currentWashTemp = this.BOOST;
+            break;
+          case "SANI":
+            this.currentWashTemp = this.SANI;
+            break;
+          case "SANIANDBOOST":
+            this.currentWashTemp = this.SANIANDBOOST;
+            break;
+        }
+      }
+    });
+
+    drymodes.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "NONE":
+            this.currentHeatedDry = this.NOHEAT;
+            break;
+          case "ADDEDHEAT":
+            this.currentHeatedDry = this.ADDEDHEAT;
+            break;
+          case "MAXDRY":
+            this.currentHeatedDry = this.MAXDRY;
+            break;
+        }
+      }
+    });
+
+    zones.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "BOTH":
+            this.currentWashZone = this.BOTH;
+            break;
+          case "UPPER":
+            this.currentWashZone = this.UPPER;
+            break;
+          case "LOWER":
+            this.currentWashZone = this.LOWER;
+            break;
+        }
+      }
+    });
+
+    presets.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "Normal":
+            this.currentPreset = this.NORMAL_MODE;
+            break;
+          case "Autosense":
+            this.currentPreset = this.AUTOSENSE_MODE;
+            break;
+          case "Heavy":
+            this.currentPreset = this.HEAVY_MODE;
+            break;
+          case "Platinumplus":
+            this.currentPreset = this.PLATPLUS_MODE;
+            break;
+          case "1 Hour":
+            this.currentPreset = this.ONE_HOUR_MODE;
+            break;
+          case "Rinse":
+            this.currentPreset = this.RINSE_MODE;
+            break;
+          case "Cleaning":
+            this.currentPreset = this.CLEANING_MODE;
+            break;
+          case "Light":
+            this.currentPreset = this.LIGHT_MODE;
+            break;
+        }
+      }
+    });
+    this.client.debug("Initial Preset Mode: " + this.currentPreset);
+    this.client.debug("Initial Wash Temp: " + this.currentWashTemp);
+    this.client.debug("Initial Wash Zone: " + this.currentWashZone);
+    this.client.debug("Initial Heated Dry: " + this.currentHeatedDry);
 
     // NOTE:  only for developing a method for testing command combinations.
     // this.testCases();
@@ -972,6 +1088,27 @@ export class Dishwasher {
     service.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
 
     return service;
+  }
+
+  /**
+   * Remove all old services from cache (except AccessoryInformation)
+   * This clears old UUIDs and prevents service conflicts when recreating services
+   */
+  clearOldServices(accessory: PlatformAccessory) {
+    const servicesToRemove: Service[] = [];
+    
+    // Collect all services except AccessoryInformation
+    for (const service of accessory.services) {
+      if (service.UUID !== this.Service.AccessoryInformation.UUID) {
+        servicesToRemove.push(service);
+      }
+    }
+    
+    // Remove the collected services
+    servicesToRemove.forEach(service => {
+      this.client.debug(chalk.yellow(`Removing cached service: ${service.displayName}`));
+      accessory.removeService(service);
+    });
   }
 
   getAvailableItemsByType(availableType: string): [string, string][] {

@@ -97,6 +97,19 @@ export class Dehumidifier {
       debug: platform.config.debugLogging || false,
     });
 
+    // Initialize properties with defaults (in case we return early)
+    this.humidityMin = (platform.config.humidityMin as number) ?? 35;
+    this.humidityMax = (platform.config.humidityMax as number) ?? 80;
+    this.serviceUpdateListener = () => {};
+
+    // Check if dehumidifier service is excluded from config
+    if (this.platform.config.excludeDehumidifierServices) {
+      this.platform.log.info(chalk.yellow(`Dehumidifier service is excluded from config. Clearing old UUIDs for ${this.deviceId}`));
+      // Clear old services from cache before returning
+      this.clearOldServices(this.accessory);
+      return;
+    }
+
     // Initialize humidity thresholds from config
     this.humidityMin = (platform.config.humidityMin as number) ?? 35;
     this.humidityMax = (platform.config.humidityMax as number) ?? 80;
@@ -451,5 +464,26 @@ export class Dehumidifier {
         error,
       );
     }
+  }
+
+  /**
+   * Remove all old services from cache (except AccessoryInformation)
+   * This clears old UUIDs and prevents service conflicts when recreating services
+   */
+  clearOldServices(accessory: PlatformAccessory) {
+    const servicesToRemove: Service[] = [];
+    
+    // Collect all services except AccessoryInformation
+    for (const service of accessory.services) {
+      if (service.UUID !== this.Service.AccessoryInformation.UUID) {
+        servicesToRemove.push(service);
+      }
+    }
+    
+    // Remove the collected services
+    servicesToRemove.forEach(service => {
+      this.client.debug(chalk.yellow(`Removing cached service: ${service.displayName}`));
+      accessory.removeService(service);
+    });
   }
 }

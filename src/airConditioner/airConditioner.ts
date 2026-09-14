@@ -84,6 +84,18 @@ export class AirConditioner {
       debug: platform.config.debugLogging || false,
     });
 
+    // Initialize serviceUpdateListener with a default no-op function (in case we return early)
+    this.serviceUpdateListener = () => {};
+
+    // Check if air conditioner service is excluded from config
+    if (this.platform.config.excludeAirConditionerServices) {
+      this.platform.log.info(chalk.yellow(`Air Conditioner service is excluded from config. Clearing old UUIDs for ${this.deviceId}`));
+      // Clear old services from cache before returning
+      this.clearOldServices(this.accessory);
+      this.groupAccessory.forEach(accessory => this.clearOldServices(accessory));
+      return;
+    }
+
     this.serviceUpdateListener = (message: ServiceMessage) => {
       if (message.deviceId !== this.deviceId) return;
       if (
@@ -825,5 +837,26 @@ export class AirConditioner {
     service.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
 
     return service;
+  }
+
+  /**
+   * Remove all old services from cache (except AccessoryInformation)
+   * This clears old UUIDs and prevents service conflicts when recreating services
+   */
+  clearOldServices(accessory: PlatformAccessory) {
+    const servicesToRemove: Service[] = [];
+    
+    // Collect all services except AccessoryInformation
+    for (const service of accessory.services) {
+      if (service.UUID !== this.Service.AccessoryInformation.UUID) {
+        servicesToRemove.push(service);
+      }
+    }
+    
+    // Remove the collected services
+    servicesToRemove.forEach(service => {
+      this.client.debug(chalk.yellow(`Removing cached service: ${service.displayName}`));
+      accessory.removeService(service);
+    });
   }
 }

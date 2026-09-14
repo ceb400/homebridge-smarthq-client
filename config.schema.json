@@ -115,6 +115,26 @@
         "title": "Maximum Humidity Threshold",
         "default": 80
       },
+      "excludeFridgeServices": {
+        "type": "boolean",
+        "title": "Do NOT create entities for any refrigerator services",
+        "default": false
+      },
+      "excludeDishwasherServices": {
+        "type": "boolean",
+        "title": "Do NOT create entities for any dishwasher services",
+        "default": false
+      },
+      "excludeDehumidifierServices": {
+        "type": "boolean",
+        "title": "Do NOT create entities for any dehumidifier services",
+        "default": false
+      },
+      "excludeAirConditionerServices": {
+        "type": "boolean",
+        "title": "Do NOT create entities for any air conditioner services",
+        "default": false
+      },
       "debugLogging": {
         "type": "boolean",
         "title": "Plugin Debug Logging w/Chalk Colors",
@@ -152,6 +172,23 @@
             "clientId",
             "clientSecret",
             "redirectUri"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Exclude Device Types",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "description": "Do NOT create services for the selected device types.",
+          "items": [
+            "excludeAirConditionerServices",
+            "excludeDehumidifierServices",
+            "excludeDishwasherServices",
+            "excludeFridgeServices"
           ]
         }
       ]
