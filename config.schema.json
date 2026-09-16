@@ -33,87 +33,138 @@
       "addControlLock": {
         "type": "boolean",
         "title": "Add Controls Lock",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addConvertibleDrawer": {
         "type": "boolean",
         "title": "Add Convertible Drawer Controls",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addDispenserLight": {
         "type": "boolean",
         "title": "Add Dispenser Light Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addIceMaker": {
         "type": "boolean",
         "title": "Add Ice Maker Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addInteriorLight": {
         "type": "boolean",
         "title": "Add Interior Light Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addSabbathMode": {
         "type": "boolean",
         "title": "Add Sabbath Mode Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addTemperatureUnits": {
         "type": "boolean",
         "title": "Add Temperature Units Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addEnergyMonitor": {
         "type": "boolean",
         "title": "Add Energy Monitor",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addTurboCool": {
         "type": "boolean",
         "title": "Add Turbo Cool Controls",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addWaterFilter": {
         "type": "boolean",
         "title": "Add Water Filter Status",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addAlerts": {
         "type": "boolean",
         "title": "Add Alert Notifications",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeFridgeServices !== true;"
+        }
       },
       "addDwSabbath": {
         "type": "boolean",
         "title": "Add Sabbath Mode Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeDishwasherServices !== true;"
+        }
       },
       "addDwSound": {
         "type": "boolean",
         "title": "Add Sound Option Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeDishwasherServices !== true;"
+        }
       },
       "addDwFanFresh": {
         "type": "boolean",
         "title": "Add Fan Fresh Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeDishwasherServices !== true;"
+        }
       },
       "addDwControlLock": {
         "type": "boolean",
         "title": "Add Control Lock Control",
-        "default": false
+        "default": false,
+        "condition": {
+          "functionBody": "return model.excludeDishwasherServices !== true;"
+        }
       },
       "humidityMin": {
         "type": "integer",
         "title": "Minimum Humidity Threshold",
-        "default": 35
+        "default": 35,
+        "condition": {
+          "functionBody": "return model.excludeDehumidifierServices !== true;"
+        }
       },
       "humidityMax": {
         "type": "integer",
         "title": "Maximum Humidity Threshold",
-        "default": 80
+        "default": 80,
+        "condition": {
+          "functionBody": "return model.excludeDehumidifierServices !== true;"
+        }
       },
       "excludeFridgeServices": {
         "type": "boolean",
@@ -135,7 +186,7 @@
         "title": "Do NOT create entities for any air conditioner services",
         "default": false
       },
-      "debugLogging": {
+      "debug": {
         "type": "boolean",
         "title": "Plugin Debug Logging w/Chalk Colors",
         "default": false
@@ -255,7 +306,7 @@
       "expandable": true,
       "expanded": false,
       "items": [
-        "debugLogging",
+        "debug",
         "debugServicesAll",
         "debugServicesFridge",
         "debugServicesDishwasher"

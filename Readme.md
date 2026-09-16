@@ -107,7 +107,7 @@ Or manually edit the config file with
     "addDwSound": true,
     "addDwFanFresh": true,
     "addDwControlLock": true,
-    "debugLogging": true,
+    "debug": true,
     "clientId": "your client Id",
     "clientSecret": "your client Secret",
     "_bridge": {

@@ -36,7 +36,7 @@ export class RefrigeratorAlerts {
       clientId:       platform.config.clientId,
       clientSecret:   platform.config.clientSecret,
       redirectUri:    platform.config.redirectUri,
-      debug:          platform.config.debugLogging || false,
+      debug:          platform.config.debug || false,
     });
 
      this.setupWebSocket();

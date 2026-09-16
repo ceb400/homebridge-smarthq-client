@@ -81,7 +81,7 @@ export class AirConditioner {
       clientId: platform.config.clientId,
       clientSecret: platform.config.clientSecret,
       redirectUri: platform.config.redirectUri,
-      debug: platform.config.debugLogging || false,
+      debug: platform.config.debug || false,
     });
 
     // Initialize serviceUpdateListener with a default no-op function (in case we return early)

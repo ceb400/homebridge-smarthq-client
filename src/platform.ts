@@ -41,12 +41,12 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       clientId: this.config.clientId,
       clientSecret: this.config.clientSecret,
       redirectUri: this.config.redirectUri,
-      debug: this.config.debugLogging || false,
+      debug: this.config.debug || false,
     });
 
     chalk.level = 1;
 
-    if (this.config.debugLogging) {
+    if (this.config.debug) {
       this.log.info(chalk.green('Debug logging is enabled for SmartHQ Platform'));
     }
 
@@ -331,7 +331,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
   // DEBUG
   // =========================================================
   public debug(color: string, message: string) {
-    if (!this.config.debugLogging) return;
+    if (!this.config.debug) return;
 
     switch (color) {
       case 'red':

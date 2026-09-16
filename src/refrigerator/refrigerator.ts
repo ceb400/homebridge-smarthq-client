@@ -36,7 +36,7 @@ export class Refrigerator {
       clientId:       platform.config.clientId,
       clientSecret:   platform.config.clientSecret,
       redirectUri:    platform.config.redirectUri,
-      debug:          platform.config.debugLogging || false,
+      debug:          platform.config.debug || false,
     });
 
     // Check if refrigerator service is excluded from config
