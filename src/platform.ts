@@ -15,6 +15,7 @@ import chalk from 'chalk';
 import { setupDishwasherServices } from './dishwasherServices.js';
 import { setupRefrigeratorServices } from './refrigeratorServices.js';
 import { setupAirConditionerServices } from './airConditionerServices.js';
+import { setupDehumidifierServices } from './dehumidifierServices.js';
 
 export class SmartHqPlatform implements DynamicPlatformPlugin {
   private client: SmartHQClient;
@@ -40,12 +41,12 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
       clientId: this.config.clientId,
       clientSecret: this.config.clientSecret,
       redirectUri: this.config.redirectUri,
-      debug: this.config.debugLogging || false,
+      debug: this.config.debug || false,
     });
 
     chalk.level = 1;
 
-    if (this.config.debugLogging) {
+    if (this.config.debug) {
       this.log.info(chalk.green('Debug logging is enabled for SmartHQ Platform'));
     }
 
@@ -224,6 +225,12 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
               break;
             }
 
+            case 'cloud.smarthq.device.dehumidifier': {
+              this.debug('green', `Setting up Dehumidifier services for ${device.nickname}`);
+              setupDehumidifierServices.call(this, accessoryType!, deviceServices, device.deviceId);
+              break;
+            }
+
             default:
               this.debug('red', `not implemented device : for device ${device.nickname}`);
           }
@@ -324,7 +331,7 @@ export class SmartHqPlatform implements DynamicPlatformPlugin {
   // DEBUG
   // =========================================================
   public debug(color: string, message: string) {
-    if (!this.config.debugLogging) return;
+    if (!this.config.debug) return;
 
     switch (color) {
       case 'red':

@@ -1,3 +1,14 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [1.3.0](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.2.10...v1.3.0) (2026-09-14)
+- Add support for dehumidifier with configurable range for min and max humidity
+- Add feature to allow exclusion of individual device types so no services for that type are created
+and if device is excluded remove old UUIDs from cache.
+- Fix refrigerator.ts to remove UUID from cache for individual service disabled in config file
+- Fix dishwasher.ts to remove UUID from cache for individual service disabled in config file
+
 ## [1.2.10](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.2.9...v1.2.10) (2026-08-27)
 
 
@@ -21,9 +32,7 @@
 
 
 
-# Changelog
 
-All notable changes to this project will be documented in this file.
 
 ## [1.2.7](https://github.com/ceb400/homebridge-smarthq-client/releases/tag/v1.2.7) (2026-08-24)
 - Use original ge-smarthq library now that it is being maintained 
