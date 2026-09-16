@@ -51,6 +51,11 @@ export class Dehumidifier {
   private readonly FAN_HIGH = 'cloud.smarthq.type.fanspeed.high';
   private readonly FAN_SMART_DRY = 'cloud.smarthq.type.fanspeed.smart.dry';
 
+  // Fan speeds this unit actually supports, in slider order. Seeded from the
+  // device's own thermostat config (supportedFanSpeeds) so other GE dehumidifier
+  // models with different speeds work without code changes; this is only a fallback.
+  private supportedFanSpeeds: string[] = [this.FAN_LOW, this.FAN_HIGH, this.FAN_SMART_DRY];
+
   // ======== State cache ========
   private isOn = false;
   private lastActiveMode = this.MODE_ON;
@@ -127,6 +132,9 @@ export class Dehumidifier {
       const c = thermostat.config;
       if (c.humidityMinimum != null) this.humidityMin = c.humidityMinimum as number;
       if (c.humidityMaximum != null) this.humidityMax = c.humidityMaximum as number;
+      if (Array.isArray(c.supportedFanSpeeds) && c.supportedFanSpeeds.length > 0) {
+        this.supportedFanSpeeds = (c.supportedFanSpeeds as string[]).slice();
+      }
     }
 
     const ambient = this.findService(this.SVC_INTEGER, this.DOM_HUMIDITY_AMBIENT);
@@ -408,19 +416,23 @@ export class Dehumidifier {
     return Math.max(this.humidityMin, Math.min(this.humidityMax, Math.round(value)));
   }
 
+  // Map a fan-speed string to a RotationSpeed percentage, spacing the supported
+  // speeds evenly across 0-100 (e.g. 3 speeds -> 33 / 66 / 100).
   private fanSpeedToPercent(fan: string): number {
-    switch (fan) {
-      case this.FAN_LOW: return 33;
-      case this.FAN_HIGH: return 66;
-      case this.FAN_SMART_DRY: return 100;
-      default: return 66;
-    }
+    const n = this.supportedFanSpeeds.length;
+    if (n === 0) return 100;
+    const idx = this.supportedFanSpeeds.indexOf(fan);
+    const rank = idx === -1 ? n - 1 : idx;
+    return Math.round(((rank + 1) / n) * 100);
   }
 
+  // Map a RotationSpeed percentage back to the nearest supported fan speed.
   private percentToFanSpeed(percent: number): string {
-    if (percent <= 40) return this.FAN_LOW;
-    if (percent <= 75) return this.FAN_HIGH;
-    return this.FAN_SMART_DRY;
+    const n = this.supportedFanSpeeds.length;
+    if (n === 0) return this.lastActiveFanSpeed;
+    const step = 100 / n;
+    const idx = Math.min(n - 1, Math.max(0, Math.ceil(percent / step) - 1));
+    return this.supportedFanSpeeds[idx];
   }
 
   private computeCurrentState(): number {
