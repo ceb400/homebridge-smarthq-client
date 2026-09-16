@@ -5,7 +5,7 @@ import {
   Service,
   Characteristic,
 } from "homebridge";
-import { SmartHQClient, DeviceService } from "ge-smarthq";
+import { SmartHQClient, DeviceService, SendCommandRequest } from "ge-smarthq";
 import { SmartHqPlatform } from "../platform.js";
 import { ServiceMessage } from "../index.js";
 import chalk from "chalk";
@@ -48,8 +48,25 @@ export class Dishwasher {
   private readonly PLATPLUS_MODE =
     "cloud.smarthq.domain.dishwasher.brand.cascade.platinumplus";
   private readonly RINSE_MODE = "cloud.smarthq.domain.dishwasher.rinse";
+  private readonly CLEANING_MODE = "cloud.smarthq.domain.dishwasher.dishwasher.cleaning";
+  private readonly LIGHT_MODE = "cloud.smarthq.domain.dishwasher.light";
 
-  
+  //========  wash temp constants  ========
+  private readonly NONE = "cloud.smarthq.domain.washtemp.none";
+  private readonly BOOST = "cloud.smarthq.domain.washtemp.boost";
+  private readonly SANI = "cloud.smarthq.domain.washtemp.sani";
+  private readonly SANIANDBOOST = "cloud.smarthq.domain.washtemp.saniandboost";
+
+  //========  wash zone constants  ========
+  private readonly BOTH = "cloud.smarthq.domain.washzone.both";
+  private readonly UPPER = "cloud.smarthq.domain.washzone.upper";
+  private readonly LOWER = "cloud.smarthq.domain.washzone.lower";
+
+  //========  heated dry constants  ========
+  private readonly NOHEAT = "cloud.smarthq.domain.heateddry.none";
+  private readonly ADDEDHEAT = "cloud.smarthq.domain.heateddry.addedheat";
+  private readonly MAXDRY = "cloud.smarthq.domain.heateddry.maxdry";
+
   
 
   constructor(
@@ -70,8 +87,17 @@ export class Dishwasher {
       clientId: platform.config.clientId,
       clientSecret: platform.config.clientSecret,
       redirectUri: platform.config.redirectUri,
-      debug: platform.config.debugLogging || false,
+      debug: platform.config.debug || false,
     });
+
+    // Check if dishwasher service is excluded from config
+    if (this.platform.config.excludeDishwasherServices) {
+      this.platform.log.info(chalk.yellow(`Dishwasher service is excluded from config. Clearing old UUIDs for ${this.deviceId}`));
+      // Clear old services from cache before returning
+      this.clearOldServices(this.accessory);
+      this.groupAccessory.forEach(accessory => this.clearOldServices(accessory));
+      return;
+    }
 
     this.setupWebSocket();
 
@@ -191,7 +217,7 @@ export class Dishwasher {
         minStep: 1,
       });
     } catch (error) {
-      this.client.debug("Error setting Dishwasher setduration properties: " + error);
+      this.client.debug(`Error setting Dishwasher setduration properties: ${this.formatError(error)}`);
     }
     dishwasher
       .getCharacteristic(this.Characteristic.SetDuration)
@@ -209,7 +235,7 @@ export class Dishwasher {
       });
     } catch (error) {
       this.client.debug(
-        "Error setting Dishwasher remainingduration properties: " + error,
+        `Error setting Dishwasher remainingduration properties: ${this.formatError(error)}`,
       );
     }
     dishwasher
@@ -439,7 +465,6 @@ export class Dishwasher {
           // Turn others off
           presets.forEach((otherService, otherIndex) => {
             if (index !== otherIndex) {
-              this.client.debug('Turning off for ' + otherService.displayName);
               otherService.updateCharacteristic(this.Characteristic.On, false);
             }
           });
@@ -449,6 +474,92 @@ export class Dishwasher {
       });
     });
 
+    // Sync state variables with service characteristics reflecting last known state
+    temps.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "NONE":
+            this.currentWashTemp = this.NONE;
+            break;
+          case "BOOST":
+            this.currentWashTemp = this.BOOST;
+            break;
+          case "SANI":
+            this.currentWashTemp = this.SANI;
+            break;
+          case "SANIANDBOOST":
+            this.currentWashTemp = this.SANIANDBOOST;
+            break;
+        }
+      }
+    });
+
+    drymodes.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "NONE":
+            this.currentHeatedDry = this.NOHEAT;
+            break;
+          case "ADDEDHEAT":
+            this.currentHeatedDry = this.ADDEDHEAT;
+            break;
+          case "MAXDRY":
+            this.currentHeatedDry = this.MAXDRY;
+            break;
+        }
+      }
+    });
+
+    zones.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "BOTH":
+            this.currentWashZone = this.BOTH;
+            break;
+          case "UPPER":
+            this.currentWashZone = this.UPPER;
+            break;
+          case "LOWER":
+            this.currentWashZone = this.LOWER;
+            break;
+        }
+      }
+    });
+
+    presets.forEach((service) => {
+      if (service.getCharacteristic(this.Characteristic.On).value === true) {
+        switch (service.displayName) {
+          case "Normal":
+            this.currentPreset = this.NORMAL_MODE;
+            break;
+          case "Autosense":
+            this.currentPreset = this.AUTOSENSE_MODE;
+            break;
+          case "Heavy":
+            this.currentPreset = this.HEAVY_MODE;
+            break;
+          case "Platinumplus":
+            this.currentPreset = this.PLATPLUS_MODE;
+            break;
+          case "1 Hour":
+            this.currentPreset = this.ONE_HOUR_MODE;
+            break;
+          case "Rinse":
+            this.currentPreset = this.RINSE_MODE;
+            break;
+          case "Cleaning":
+            this.currentPreset = this.CLEANING_MODE;
+            break;
+          case "Light":
+            this.currentPreset = this.LIGHT_MODE;
+            break;
+        }
+      }
+    });
+    this.client.debug("Initial Preset Mode: " + this.currentPreset);
+    this.client.debug("Initial Wash Temp: " + this.currentWashTemp);
+    this.client.debug("Initial Wash Zone: " + this.currentWashZone);
+    this.client.debug("Initial Heated Dry: " + this.currentHeatedDry);
 
     // NOTE:  only for developing a method for testing command combinations.
     // this.testCases();
@@ -465,11 +576,11 @@ export class Dishwasher {
             service.serviceId,
           );
           if (response?.state == null) {
-            this.client.debug("No response from get state - abort test");
+            this.client.debug("No response from dishwasher state request");
             break;
           }
         } catch (error) {
-          this.client.debug("Error getting test: " + error);
+          this.client.debug(`Dishwasher state request failed: ${this.formatError(error)}`);
           break;
         }
 
@@ -503,7 +614,7 @@ export class Dishwasher {
             service.serviceId,
           );
           if (response?.state == null) {
-            this.client.debug("No response from getrunstatus command");
+            this.client.debug("No response from dishwasher run status request");
             return false;
           }
           if (response.state.runStatus === "cloud.smarthq.type.runstatus.off") {
@@ -538,7 +649,7 @@ export class Dishwasher {
           }
           break;
         } catch (error) {
-          this.client.debug("Error getting test: " + error);
+          this.client.debug(`Dishwasher run status request failed: ${this.formatError(error)}`);
           return isActive;
         }
       }
@@ -550,11 +661,11 @@ export class Dishwasher {
    * Handle requests to set the "Active" characteristic
    */
   async handleActiveSet(value: CharacteristicValue) {
-    this.client.debug("== Starting:" + value);
+    this.client.debug(`Starting dishwasher active state: ${value}`);
     if (value) {
       const setModeResp = await this.setMode();
       if (!setModeResp) {
-        this.client.debug("Failed to set mode, not starting cycle");
+        this.client.debug("setMode failed; not starting cycle");
         return;
       }
       this.platform.log.info(chalk.green("Starting dishwasher cycle with options:"));
@@ -603,13 +714,13 @@ export class Dishwasher {
             service.serviceId,
           );
           if (response?.state == null) {
-            this.client.debug("No response from gettest command");
+            this.client.debug("No response from dishwasher name request");
             return false;
           }
           //this.client.debug('Dishwasher state response: ' + JSON.stringify(response, null, 2));
           break;
         } catch (error) {
-          this.client.debug("Error getting test: " + error);
+          this.client.debug(`Dishwasher name request failed: ${this.formatError(error)}`);
           return false;
         }
       }
@@ -640,13 +751,13 @@ export class Dishwasher {
           );
           */
           if (response?.state?.mode == null) {
-            this.client.debug("No response from getmodenormal command");
+            this.client.debug("No response from dishwasher mode request");
             return false;
           }
           isOn = response?.state?.mode === v1mode;
           break;
         } catch (error) {
-          this.client.debug("Error getting test: " + error);
+          this.client.debug(`Dishwasher mode request failed: ${this.formatError(error)}`);
           return false;
         }
       }
@@ -717,14 +828,22 @@ export class Dishwasher {
   }
 
   async setMode() {
-    let cmdBody;
-    let validCommand = false;
+    const baseCommand = {
+      deviceId: this.deviceId,
+      kind: "service#command",
+      serviceDeviceType: "cloud.smarthq.device.dishwasher",
+      serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
+    };
+
+    let cmdBody: SendCommandRequest;
 
     switch (this.currentPreset) {
       case this.NORMAL_MODE:
       case this.HEAVY_MODE:
       case this.AUTOSENSE_MODE:
         cmdBody = {
+          ...baseCommand,
+          domainType: this.currentPreset,
           command: {
             washTemp: this.currentWashTemp,
             washZone: this.currentWashZone,
@@ -734,17 +853,13 @@ export class Dishwasher {
             silverwareWash: this.currentSilverwareWash,
             commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
           },
-          deviceId: this.deviceId,
-          domainType: this.currentPreset,
-          kind: "service#command",
-          serviceDeviceType: "cloud.smarthq.device.dishwasher",
-          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
         };
-        validCommand = true;
-
         break;
+
       case this.PLATPLUS_MODE:
         cmdBody = {
+          ...baseCommand,
+          domainType: this.currentPreset,
           command: {
             washTemp: this.currentWashTemp,
             heatedDry: this.currentHeatedDry,
@@ -752,33 +867,25 @@ export class Dishwasher {
             steam: this.currentSteam,
             commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
           },
-          deviceId: this.deviceId,
-          domainType: this.currentPreset,
-          kind: "service#command",
-          serviceDeviceType: "cloud.smarthq.device.dishwasher",
-          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
         };
-        validCommand = true;
-
         break;
+
       case this.RINSE_MODE:
         cmdBody = {
+          ...baseCommand,
+          domainType: this.currentPreset,
           command: {
             washZone: this.currentWashZone,
             bottleWash: this.currentbottleWash,
             commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
           },
-          deviceId: this.deviceId,
-          domainType: this.currentPreset,
-          kind: "service#command",
-          serviceDeviceType: "cloud.smarthq.device.dishwasher",
-          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
         };
-        validCommand = true;
-
         break;
+
       case this.ONE_HOUR_MODE:
         cmdBody = {
+          ...baseCommand,
+          domainType: this.currentPreset,
           command: {
             washZone: this.currentWashZone,
             heatedDry: this.currentHeatedDry,
@@ -786,17 +893,13 @@ export class Dishwasher {
             silverwareWash: this.currentSilverwareWash,
             commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
           },
-          deviceId: this.deviceId,
-          domainType: this.currentPreset,
-          kind: "service#command",
-          serviceDeviceType: "cloud.smarthq.device.dishwasher",
-          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
         };
-        validCommand = true;
-
         break;
+
       default:
         cmdBody = {
+          ...baseCommand,
+          domainType: this.currentPreset,
           command: {
             washZone: this.currentWashZone,
             heatedDry: this.currentHeatedDry,
@@ -804,26 +907,46 @@ export class Dishwasher {
             silverwareWash: this.currentSilverwareWash,
             commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
           },
-          deviceId: this.deviceId,
-          domainType: "this.currentPreset",
-          kind: "service#command",
-          serviceDeviceType: "cloud.smarthq.device.dishwasher",
-          serviceType: "cloud.smarthq.service.dishwasher.state.v1",
         };
     }
-    if (validCommand) {
-      try {
-        const response = await this.client.sendCommand(cmdBody); // This command sets the mode and options
 
-        if (response == null) {
-          this.client.debug("No response from setActive command");
-          return false;
-        } 
-        return response.success;
+    try {
+      const response = await this.client.sendCommand(cmdBody);
 
-      } catch (error) {
-        this.platform.log.warn("Error sending setActive command: " + error);
+      if (response == null) {
+        this.client.debug("No response from setMode command");
+        return false;
       }
+
+      return !!response.success;
+    } catch (error: unknown) {
+      this.platform.log.warn(`setMode command failed: ${this.formatError(error)}`);
+      return false;
+    }
+  }
+
+  private formatError(error: unknown): string {
+    if (error instanceof Error) {
+      return error.stack ?? `${error.name}: ${error.message}`;
+    }
+    if (typeof error === "string") {
+      return error;
+    }
+    if (error && typeof error === "object") {
+      const objectError = error as Record<string, unknown>;
+      const entries = Object.entries(objectError).filter(([, value]) => value !== undefined);
+      if (entries.length > 0) {
+        try {
+          return JSON.stringify(Object.fromEntries(entries), null, 2);
+        } catch {
+          return String(error);
+        }
+      }
+    }
+    try {
+      return JSON.stringify(error, null, 2);
+    } catch {
+      return String(error);
     }
   }
 
@@ -860,7 +983,7 @@ export class Dishwasher {
         return response.success;
       }
     } catch (error) {
-      this.platform.log.warn("Error sending startCycle command: " + error);
+      this.platform.log.warn(`startCycle command failed: ${this.formatError(error)}`);
       return false;
     }
   }
@@ -899,7 +1022,7 @@ export class Dishwasher {
         return response.success;
       }
     } catch (error) {
-      this.platform.log.warn("Error sending stopCycle command: " + error);
+      this.platform.log.warn(`stopCycle command failed: ${this.formatError(error)}`);
       return false;
     }
   }
@@ -972,6 +1095,27 @@ export class Dishwasher {
     service.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
 
     return service;
+  }
+
+  /**
+   * Remove all old services from cache (except AccessoryInformation)
+   * This clears old UUIDs and prevents service conflicts when recreating services
+   */
+  clearOldServices(accessory: PlatformAccessory) {
+    const servicesToRemove: Service[] = [];
+    
+    // Collect all services except AccessoryInformation
+    for (const service of accessory.services) {
+      if (service.UUID !== this.Service.AccessoryInformation.UUID) {
+        servicesToRemove.push(service);
+      }
+    }
+    
+    // Remove the collected services
+    servicesToRemove.forEach(service => {
+      this.client.debug(chalk.yellow(`Removing cached service: ${service.displayName}`));
+      accessory.removeService(service);
+    });
   }
 
   getAvailableItemsByType(availableType: string): [string, string][] {
@@ -1068,7 +1212,7 @@ export class Dishwasher {
       await this.client.connect();
     } catch (error) {
       this.platform.log.warn(
-        "Failed to connect to SmartHQ WebSocket during platform initialization: " + error,
+        `Failed to connect to SmartHQ WebSocket during platform initialization: ${this.formatError(error)}`,
       );
     }
   }
@@ -1116,7 +1260,7 @@ export class Dishwasher {
             service.serviceId,
           );
           if (response?.state == null) {
-            this.client.debug("No response from get state - abort test");
+            this.client.debug("No response from dishwasher test state request");
             return;
           } 
           this.client.debug(JSON.stringify(response, null, 2));
@@ -1130,7 +1274,7 @@ export class Dishwasher {
           this.client.debug(chalk.green(`Pre test state = mode:${originalMode}  washTemp:${originalWashTemp}`));
           this.client.debug('---------------------------------------------------------');
         } catch (error) {
-          this.client.debug("Error getting test: " + error);
+          this.client.debug(`Dishwasher test state request failed: ${this.formatError(error)}`);
           return;
         }
 
@@ -1149,8 +1293,8 @@ export class Dishwasher {
           this.client.debug(chalk.greenBright(` ##         Setting temp to ${washTempBase}${waterTemp} ##`));
           await new Promise(resolve => setTimeout(resolve, 4000));
         }
-      }  catch (error) {
-        this.platform.log.warn("Error sending setActive command: " + error);
+      } catch (error) {
+        this.platform.log.warn(`testSetMode command failed: ${this.formatError(error)}`);
         return false;
       }
     }
@@ -1198,12 +1342,12 @@ export class Dishwasher {
           if (response == null) {
             this.client.debug("No response from setMode command");
             return false;
-          } 
-          this.client.debug('Set mode ${mode} outcome: ' + response.success)
+          }
+          this.client.debug(`Set mode ${mode} outcome: ${response.success}`);
           return response.success;
         
       } catch (error) {
-        this.platform.log.warn("Error sending setActive command: " + error);
+        this.platform.log.warn(`testSetMode command failed: ${this.formatError(error)}`);
         return false;
       }
   }

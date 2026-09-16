@@ -7,6 +7,17 @@ export default defineConfig([
   {
     ignores: ['**/dist'],
   },
-  { files: ["**/*.{js,mjs,cjs,ts,mts,cts}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: globals.browser } },
+  {
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    plugins: { js },
+    extends: ["js/recommended"],
+    languageOptions: { globals: globals.browser },
+  },
+  {
+    files: ["jest.config.cjs"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   tseslint.configs.recommended,
 ]);
