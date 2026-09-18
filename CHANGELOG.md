@@ -1,3 +1,11 @@
+## [1.3.1](https://github.com/ceb400/homebridge-smarthq-client/compare/v1.3.0...v1.3.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* :bug: dishwasher options initialized wrong ([ee59785](https://github.com/ceb400/homebridge-smarthq-client/commit/ee59785bbdc33a7373a8d0dfe0b766f0101ac1e2))
+* :bug: Fix Dishwasher Cleaning mode error.  Replace Cycle Pct Done with new Time remaining ([a1738bb](https://github.com/ceb400/homebridge-smarthq-client/commit/a1738bbe3e36217c0476d89ffcbe1f5682909776))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
