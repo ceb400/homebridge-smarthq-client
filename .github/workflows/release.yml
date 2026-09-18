@@ -33,7 +33,9 @@ jobs:
         run: npm run build --if-present
 
       - name: Run Tests
-        run: npm test --if-present 
+        run: npm test --if-present
+        env:
+          NODE_OPTIONS: --experimental-vm-modules
 
       - name: Semantic Release
         env:
