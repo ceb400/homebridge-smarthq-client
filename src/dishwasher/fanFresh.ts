@@ -1,6 +1,12 @@
-import { API, CharacteristicValue, PlatformAccessory, Service, Characteristic } from 'homebridge';
-import { SmartHQClient, DeviceService } from 'ge-smarthq';
-import { SmartHqPlatform } from '../platform.js';
+import {
+  API,
+  CharacteristicValue,
+  PlatformAccessory,
+  Service,
+  Characteristic,
+} from "homebridge";
+import { SmartHQClient, DeviceService } from "ge-smarthq";
+import { SmartHqPlatform } from "../platform.js";
 
 /**
  * Platform Accessory
@@ -12,30 +18,28 @@ export class FanFresh {
   public readonly Service: typeof Service;
   public readonly Characteristic: typeof Characteristic;
   private readonly api: API;
-  
 
   constructor(
     private readonly platform: SmartHqPlatform,
     private readonly accessory: PlatformAccessory,
     public readonly deviceServices: DeviceService[],
     public readonly deviceId: string,
-    ) {
-
-    this.api = platform.api; 
+  ) {
+    this.api = platform.api;
     this.Service = this.api.hap.Service;
     this.Characteristic = this.api.hap.Characteristic;
     this.accessory = accessory;
     this.deviceServices = deviceServices;
     this.deviceId = deviceId;
     this.client = new SmartHQClient({
-      clientId:       platform.config.clientId,
-      clientSecret:   platform.config.clientSecret,
-      redirectUri:    platform.config.redirectUri,
-      debug:          platform.config.debug || false,
+      clientId: platform.config.clientId,
+      clientSecret: platform.config.clientSecret,
+      redirectUri: platform.config.redirectUri,
+      debug: platform.config.debug || false,
     });
 
-   
-    if (!this.platform.config.addDwFanFresh) {     // If user has not enabled Fan Fresh switch, then don't add it
+    if (!this.platform.config.addDwFanFresh) {
+      // If user has not enabled Fan Fresh switch, then don't add it
       return;
     }
 
@@ -52,43 +56,67 @@ export class FanFresh {
     }
     if (!hasFanFresh) {
       this.client.debug(
-        "No supported Fan Fresh service found for device: " +
-          this.accessory.displayName,
+        "No supported Fan Fresh service found for device: " + this.accessory.displayName,
       );
       return;
     }
-     // create a new fan Switch service ------------------------------------
-    this.client.debug('Adding Dishwasher UltraFresh Fan Switch');
-    
-    const displayName = "UltraFresh Fan"; 
+    // create a new fan Switch service ------------------------------------
+    this.client.debug("Adding Dishwasher UltraFresh Fan Switch");
 
-    const fanfresh = this.setupService('Switch', displayName, `${this.deviceId}-fanfresh`);
-     
-      fanfresh.getCharacteristic(this.Characteristic.On)
-        .onGet(this.handleToggleGet.bind(this, 'cloud.smarthq.device.dishwasher', 'cloud.smarthq.domain.fan.fresh'))
-        .onSet(this.handleToggleSet.bind(this, 'cloud.smarthq.device.dishwasher', 'cloud.smarthq.domain.fan.fresh'));
+    const displayName = "UltraFresh Fan";
+
+    const fanfresh = this.setupService(
+      "Switch",
+      displayName,
+      `${this.deviceId}-fanfresh`,
+    );
+
+    fanfresh
+      .getCharacteristic(this.Characteristic.On)
+      .onGet(
+        this.handleToggleGet.bind(
+          this,
+          "cloud.smarthq.device.dishwasher",
+          "cloud.smarthq.domain.fan.fresh",
+        ),
+      )
+      .onSet(
+        this.handleToggleSet.bind(
+          this,
+          "cloud.smarthq.device.dishwasher",
+          "cloud.smarthq.domain.fan.fresh",
+        ),
+      );
   }
 
   //=====================================================================================
-  async handleToggleGet(deviceType: string, domain: string): Promise<CharacteristicValue> {
+  async handleToggleGet(
+    deviceType: string,
+    domain: string,
+  ): Promise<CharacteristicValue> {
     let isOn = false;
 
     for (const service of this.deviceServices) {
-      if (service.serviceDeviceType === deviceType
-        && service.serviceType === 'cloud.smarthq.service.toggle'
-        && service.domainType === domain) {
-          try {
-            const response = await this.client.getServiceDetails(this.deviceId, service.serviceId);
-            if (response?.state?.on == null) {
-                this.client.debug('No response from get command' + domain);
-                return false;
-            }
-            isOn = response?.state?.on === true;
-            break;
-          } catch (error) {
-              this.client.debug('Error getting toggle state: ' + error);
-              return false;
+      if (
+        service.serviceDeviceType === deviceType &&
+        service.serviceType === "cloud.smarthq.service.toggle" &&
+        service.domainType === domain
+      ) {
+        try {
+          const response = await this.client.getServiceDetails(
+            this.deviceId,
+            service.serviceId,
+          );
+          if (response?.state?.on == null) {
+            this.client.debug("No response from get command" + domain);
+            return false;
           }
+          isOn = response?.state?.on === true;
+          break;
+        } catch (error) {
+          this.client.debug("Error getting toggle state: " + error);
+          return false;
+        }
       }
     }
     return isOn;
@@ -97,58 +125,63 @@ export class FanFresh {
   //=====================================================================================
   async handleToggleSet(deviceType: string, domain: string, value: CharacteristicValue) {
     ///if (value) {
-    
+
     const cmdBody = {
       command: {
-        commandType: 'cloud.smarthq.command.toggle.set',
-        on: value
+        commandType: "cloud.smarthq.command.toggle.set",
+        on: value,
       },
-      kind: 'service#command',
+      kind: "service#command",
       deviceId: this.deviceId,
       serviceDeviceType: deviceType,
-      serviceType: 'cloud.smarthq.service.toggle',
-      domainType: domain 
+      serviceType: "cloud.smarthq.service.toggle",
+      domainType: domain,
     };
-    this.client.debug('cmdBody = ' + JSON.stringify(cmdBody, null, 2));
+    this.client.debug("cmdBody = " + JSON.stringify(cmdBody, null, 2));
     try {
       const response = await this.client.sendCommand(cmdBody);
 
       if (response == null) {
-        this.client.debug('No response from set command: ' + domain);
+        this.client.debug("No response from set command: " + domain);
         return;
       } else {
-        this.client.debug('Response fields are: ' + JSON.stringify(response, null, 2));
-        this.client.debug('Response from set command for ' + domain + ': ' + response?.outcome);
+        this.client.debug("Response fields are: " + JSON.stringify(response, null, 2));
+        this.client.debug(
+          "Response from set command for " + domain + ": " + response?.outcome,
+        );
       }
     } catch (error) {
-      this.client.debug('Error sending set command: ' + error);
+      this.client.debug("Error sending set command: " + error);
     }
   }
 
   setupService(serviceType: string, displayName: string, serviceIdSuffix: string) {
     let service: Service;
 
-    switch(serviceType) {
-      case 'Outlet':
-        service = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Outlet, displayName, serviceIdSuffix);
-          break;
+    switch (serviceType) {
+      case "Outlet":
+        service =
+          this.accessory.getService(displayName) ||
+          this.accessory.addService(this.Service.Outlet, displayName, serviceIdSuffix);
+        break;
 
-      case 'Switch':
-        service = this.accessory.getService(displayName) 
-    || this.accessory.addService(this.Service.Switch, displayName, serviceIdSuffix);
+      case "Switch":
+        service =
+          this.accessory.getService(displayName) ||
+          this.accessory.addService(this.Service.Switch, displayName, serviceIdSuffix);
         break;
 
       default:
-        this.client.debug('Unknown service type: ' + serviceType + '');
-        service = this.accessory.getService(displayName) || this.accessory.addService(this.Service.Fan, displayName, serviceIdSuffix);
+        this.client.debug("Unknown service type: " + serviceType + "");
+        service =
+          this.accessory.getService(displayName) ||
+          this.accessory.addService(this.Service.Fan, displayName, serviceIdSuffix);
     }
-    
+
     service.setCharacteristic(this.Characteristic.Name, displayName);
-    service.addOptionalCharacteristic(this.Characteristic.ConfiguredName)
+    service.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
     service.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
 
-    return service
+    return service;
   }
-
 }

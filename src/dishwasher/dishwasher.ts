@@ -73,7 +73,8 @@ export class Dishwasher {
   private readonly NONE_TEMP = "cloud.smarthq.type.dishwasher.washtemp.none";
   private readonly BOOST_TEMP = "cloud.smarthq.type.dishwasher.washtemp.boost";
   private readonly SANI_TEMP = "cloud.smarthq.type.dishwasher.washtemp.sani";
-  private readonly SANI_AND_BOOST_TEMP = "cloud.smarthq.type.dishwasher.washtemp.saniandboost";
+  private readonly SANI_AND_BOOST_TEMP =
+    "cloud.smarthq.type.dishwasher.washtemp.saniandboost";
 
   constructor(
     private readonly platform: SmartHqPlatform,
@@ -99,12 +100,16 @@ export class Dishwasher {
     // Check if dishwasher service is excluded from config
 
     if (this.platform.config.excludeDishwasherServices) {
-      this.platform.log.info(chalk.yellow(`Dishwasher service is excluded from config. Clearing old UUIDs for ${this.deviceId}`));
+      this.platform.log.info(
+        chalk.yellow(
+          `Dishwasher service is excluded from config. Clearing old UUIDs for ${this.deviceId}`,
+        ),
+      );
 
       // Clear old services from cache before returning
 
       this.clearOldServices(this.accessory);
-      this.groupAccessory.forEach(accessory => this.clearOldServices(accessory));
+      this.groupAccessory.forEach((accessory) => this.clearOldServices(accessory));
       return;
     }
 
@@ -117,10 +122,14 @@ export class Dishwasher {
      */
 
     this.client.on("service_update", (message: ServiceMessage) => {
-      if (message.domainType === "cloud.smarthq.domain.energy" 
-        && message.deviceType === "cloud.smarthq.device.dishwasher") {
+      if (
+        message.domainType === "cloud.smarthq.domain.energy" &&
+        message.deviceType === "cloud.smarthq.device.dishwasher"
+      ) {
         this.energyMeterValuePerHour += (message.state?.meterValueDelta as number) || 0; // sum for the hour until reset
-        this.client.debug(chalk.white('Energy Meter Value: ' + this.energyMeterValuePerHour));
+        this.client.debug(
+          chalk.white("Energy Meter Value: " + this.energyMeterValuePerHour),
+        );
       }
 
       // Update the time remaining from the WebSocket message if it is a cycle timer update
@@ -130,10 +139,9 @@ export class Dishwasher {
         message.serviceType === "cloud.smarthq.service.cycletimer" &&
         message.domainType === "cloud.smarthq.domain.cycle"
       ) {
-
         this.timeRemainingFromWebSocket =
           (message.state?.secondsRemaining as number) || 0;
-          
+
         if (this.totalSeconds === 0) {
           this.totalSeconds = (message.state?.secondsRemaining as number) || 0;
         }
@@ -174,9 +182,7 @@ export class Dishwasher {
 
     setInterval(
       () => {
-        this.client.debug(
-          chalk.red("Watts/hour value: " + this.energyMeterValuePerHour),
-        );
+        this.client.debug(chalk.red("Watts/hour value: " + this.energyMeterValuePerHour));
         this.energyMeterValuePerHour = 0;
       },
       60 * 60 * 1000,
@@ -184,12 +190,9 @@ export class Dishwasher {
 
     // Interval to update configured name of durationTimer service every minute to show time remaining in cycle or current time if no cycle is active
 
-    setInterval(
-      () => {
-        this.updateDurationTimerDisplay(this.timeRemainingFromWebSocket);  
-      },
-      60 * 1000,
-    );
+    setInterval(() => {
+      this.updateDurationTimerDisplay(this.timeRemainingFromWebSocket);
+    }, 60 * 1000);
 
     const washTemps: [string, string][] =
       this.getAvailableItemsByType("washTempAvailable");
@@ -222,7 +225,11 @@ export class Dishwasher {
 
     const dishwasher =
       this.accessory.getService(displayName) ||
-      this.accessory.addService(this.Service.Valve, displayName, `${this.deviceId}-dishwasher`);
+      this.accessory.addService(
+        this.Service.Valve,
+        displayName,
+        `${this.deviceId}-dishwasher`,
+      );
     dishwasher.setCharacteristic(this.Characteristic.Name, displayName);
     dishwasher.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
     dishwasher.setCharacteristic(this.Characteristic.ConfiguredName, displayName);
@@ -246,7 +253,9 @@ export class Dishwasher {
         minStep: 1,
       });
     } catch (error) {
-      this.client.debug(`Error setting Dishwasher setduration properties: ${this.formatError(error)}`);
+      this.client.debug(
+        `Error setting Dishwasher setduration properties: ${this.formatError(error)}`,
+      );
     }
     dishwasher
       .getCharacteristic(this.Characteristic.SetDuration)
@@ -280,11 +289,15 @@ export class Dishwasher {
       .getCharacteristic(this.Characteristic.Name)
       .onGet(this.handleNameGet.bind(this));
 
-      // Test dynamically changing configured name to use as a text field
+    // Test dynamically changing configured name to use as a text field
 
     const customName = "Time Display";
 
-    const durationTimer = this.setupService("Outlet", customName, `${this.deviceId}-optionstimer`);
+    const durationTimer = this.setupService(
+      "Outlet",
+      customName,
+      `${this.deviceId}-optionstimer`,
+    );
 
     durationTimer
       .getCharacteristic(this.Characteristic.On)
@@ -298,7 +311,6 @@ export class Dishwasher {
         this.client.debug(chalk.yellow(`Time Display On/Off set to: ${value}`));
       });
 
-
     /**
 
      * create a new steam Outlet service Dummy (used as 'available' option)  ------
@@ -307,7 +319,11 @@ export class Dishwasher {
 
     displayName = "Steam option";
 
-    const optionSteam = this.setupService("Outlet", displayName, `${this.deviceId}-optionsteam`);
+    const optionSteam = this.setupService(
+      "Outlet",
+      displayName,
+      `${this.deviceId}-optionsteam`,
+    );
 
     optionSteam
       .getCharacteristic(this.Characteristic.On)
@@ -319,7 +335,7 @@ export class Dishwasher {
       })
       .onSet((value) => {
         this.currentSteam = value as boolean;
-        this.testSetMode({steam: value as boolean})
+        this.testSetMode({ steam: value as boolean });
       });
 
     /**
@@ -333,7 +349,8 @@ export class Dishwasher {
     const optionBottlewash = this.setupService(
       "Outlet",
       displayName,
-      `${this.deviceId}-optionbottlewash`);
+      `${this.deviceId}-optionbottlewash`,
+    );
 
     optionBottlewash
       .getCharacteristic(this.Characteristic.On)
@@ -345,7 +362,7 @@ export class Dishwasher {
       })
       .onSet((value) => {
         this.currentbottleWash = value as boolean;
-        this.testSetMode({bottle: value as boolean})
+        this.testSetMode({ bottle: value as boolean });
       });
 
     /**
@@ -359,7 +376,8 @@ export class Dishwasher {
     const optionSilverware = this.setupService(
       "Outlet",
       displayName,
-      `${this.deviceId}-option-silverware`);
+      `${this.deviceId}-option-silverware`,
+    );
 
     optionSilverware
       .getCharacteristic(this.Characteristic.On)
@@ -371,7 +389,7 @@ export class Dishwasher {
       })
       .onSet((value) => {
         this.currentSilverwareWash = value as boolean;
-        this.testSetMode({silverware: this.currentSilverwareWash});
+        this.testSetMode({ silverware: this.currentSilverwareWash });
       });
 
     /**
@@ -392,7 +410,6 @@ export class Dishwasher {
 
     temps.forEach((service, index) => {
       service.getCharacteristic(this.Characteristic.On).onSet((value) => {
-        
         if (value === true) {
           switch (service.displayName) {
             case "None":
@@ -410,7 +427,7 @@ export class Dishwasher {
             default:
               this.currentWashTemp = this.NONE_TEMP;
           }
-      
+
           // Turn others off
 
           temps.forEach((otherService, otherIndex) => {
@@ -418,15 +435,12 @@ export class Dishwasher {
               otherService.updateCharacteristic(this.Characteristic.On, false);
             }
           });
-        
         } else {
-
           // Optional: Prevent turning off if you want "always one on" logic
 
           service.updateCharacteristic(this.Characteristic.On, true);
         }
         this.client.debug("Wash Temp mode set to " + this.currentWashTemp);
-
       });
 
       // Set initial state of wash temperature based on which service is currently on
@@ -449,7 +463,7 @@ export class Dishwasher {
             this.currentWashTemp = this.NONE_TEMP;
         }
         this.client.debug("Initial Wash Temperature set to " + this.currentWashTemp);
-      } 
+      }
     });
 
     this.client.debug(chalk.green("Dry Mode options"));
@@ -465,21 +479,20 @@ export class Dishwasher {
 
     drymodes.forEach((service, index) => {
       service.getCharacteristic(this.Characteristic.On).onSet((value) => {
-        
         if (value === true) {
           switch (service.displayName) {
-          case "None":
-            this.currentHeatedDry = this.NONE_DRY;
-            break;
-          case "Addedheat":
-            this.currentHeatedDry = this.ADDED_DRY;
-            break;
-          case "Maxdry":
-            this.currentHeatedDry = this.MAX_DRY;
-            break;
-          default:
-            this.currentHeatedDry = this.NONE_DRY;
-        }
+            case "None":
+              this.currentHeatedDry = this.NONE_DRY;
+              break;
+            case "Addedheat":
+              this.currentHeatedDry = this.ADDED_DRY;
+              break;
+            case "Maxdry":
+              this.currentHeatedDry = this.MAX_DRY;
+              break;
+            default:
+              this.currentHeatedDry = this.NONE_DRY;
+          }
 
           // Turn others off
 
@@ -488,15 +501,12 @@ export class Dishwasher {
               otherService.updateCharacteristic(this.Characteristic.On, false);
             }
           });
-        
         } else {
-
           // Optional: Prevent turning off if you want "always one on" logic
 
           service.updateCharacteristic(this.Characteristic.On, true);
         }
         this.client.debug("Dry Temp mode set to " + this.currentHeatedDry);
-
       });
 
       // Set initial state of currentHeatedDry based on which service is currently on
@@ -538,8 +548,8 @@ export class Dishwasher {
               this.currentWashZone = this.BOTH_ZONE;
               break;
             case "Lower":
-                this.currentWashZone = this.LOWER_ZONE;
-                break;
+              this.currentWashZone = this.LOWER_ZONE;
+              break;
             case "Upper":
               this.currentWashZone = this.UPPER_ZONE;
               break;
@@ -555,16 +565,12 @@ export class Dishwasher {
               otherService.updateCharacteristic(this.Characteristic.On, false);
             }
           });
-        
         } else {
-
           // Optional: Prevent turning off if you want "always one on" logic
 
           service.updateCharacteristic(this.Characteristic.On, true);
         }
-        this.client.debug(
-          "Wash Zone mode set to " + this.currentWashZone);
-
+        this.client.debug("Wash Zone mode set to " + this.currentWashZone);
       });
 
       // Set initial state of currentWashZone based on which service is currently on
@@ -575,15 +581,15 @@ export class Dishwasher {
             this.currentWashZone = this.BOTH_ZONE;
             break;
           case "Lower":
-              this.currentWashZone = this.LOWER_ZONE;
-              break;
+            this.currentWashZone = this.LOWER_ZONE;
+            break;
           case "Upper":
             this.currentWashZone = this.UPPER_ZONE;
             break;
           default:
             this.currentWashZone = this.BOTH_ZONE;
         }
-      
+
         this.client.debug("Initial Wash Zone set to " + this.currentWashZone);
       }
     });
@@ -630,7 +636,7 @@ export class Dishwasher {
             default:
               this.currentPreset = this.NORMAL_MODE;
           }
-          this.client.debug("Setting Preset Mode to " + this.currentPreset); 
+          this.client.debug("Setting Preset Mode to " + this.currentPreset);
 
           // Turn others off
 
@@ -640,9 +646,8 @@ export class Dishwasher {
             }
           });
         }
-      }); 
-          
-     
+      });
+
       // Set initial state of currentPreset based on which service is currently on
 
       if (service.getCharacteristic(this.Characteristic.On).value === true) {
@@ -651,8 +656,8 @@ export class Dishwasher {
             this.currentPreset = this.NORMAL_MODE;
             break;
           case "Heavy":
-              this.currentPreset = this.HEAVY_MODE;
-              break;
+            this.currentPreset = this.HEAVY_MODE;
+            break;
           case "AutoSense":
             this.currentPreset = this.AUTOSENSE_MODE;
             break;
@@ -678,12 +683,11 @@ export class Dishwasher {
       }
     });
 
-
     // NOTE:  only for developing a method for testing command combinations.
 
     // this.testCases();
 
-/*
+    /*
 
     for (const service of this.deviceServices) {
       if (
@@ -711,7 +715,6 @@ export class Dishwasher {
     }
 
       */
-
   }
 
   /**
@@ -747,18 +750,16 @@ export class Dishwasher {
             this.client.debug("No response from dishwasher run status request");
             return false;
           }
-          
-          if (response.state.runStatus === "cloud.smarthq.type.runstatus.endofcycle"
-            || response.state.runStatus === "cloud.smarthq.type.runstatus.off"
-          ) {
 
+          if (
+            response.state.runStatus === "cloud.smarthq.type.runstatus.endofcycle" ||
+            response.state.runStatus === "cloud.smarthq.type.runstatus.off"
+          ) {
             // change back to 0 seconds remaining when cycle is not active to prevent stale remaining time value in HomeKit
 
             this.totalSeconds = 0; // reset total seconds when cycle is complete
-            this.updateDurationTimerDisplay(this.totalSeconds);  
-          
+            this.updateDurationTimerDisplay(this.totalSeconds);
           } else {
-
             isActive = true;
             this.accessory
               .getService("Dishwasher")
@@ -771,7 +772,9 @@ export class Dishwasher {
           }
           break;
         } catch (error) {
-          this.client.debug(`Dishwasher run status request failed: ${this.formatError(error)}`);
+          this.client.debug(
+            `Dishwasher run status request failed: ${this.formatError(error)}`,
+          );
           return isActive;
         }
       }
@@ -805,9 +808,7 @@ export class Dishwasher {
         this.client.debug("Failed to start cycle");
         return;
       }
-    
     } else {
-
       await this.stopCycle();
     }
   }
@@ -819,7 +820,6 @@ export class Dishwasher {
    */
 
   async handleInUseGet(): Promise<CharacteristicValue> {
-
     //this.client.debug('Triggered GET InUse');
 
     // set this to a valid value for InUse
@@ -836,7 +836,6 @@ export class Dishwasher {
    */
 
   async handleNameGet() {
-
     //this.client.debug('Triggered GET Name');
 
     for (const service of this.deviceServices) {
@@ -920,7 +919,6 @@ export class Dishwasher {
    */
 
   async handleValveTypeGet() {
-
     //this.client.debug('Triggered GET ValveType');
 
     // set this to a valid value for ValveType
@@ -931,7 +929,6 @@ export class Dishwasher {
   }
 
   async handleRemainingTimeGet(): Promise<CharacteristicValue> {
-
     // Note: this service does not provide remaining time of an active cycle. The value appears to be the total cycle time and does not change as the cycle progresses
 
     for (const service of this.deviceServices) {
@@ -946,7 +943,6 @@ export class Dishwasher {
     }
     return this.totalSeconds;
   }
-
 
   async setMode() {
     const baseCommand = {
@@ -1065,7 +1061,9 @@ export class Dishwasher {
     }
     if (error && typeof error === "object") {
       const objectError = error as Record<string, unknown>;
-      const entries = Object.entries(objectError).filter(([, value]) => value !== undefined);
+      const entries = Object.entries(objectError).filter(
+        ([, value]) => value !== undefined,
+      );
       if (entries.length > 0) {
         try {
           return JSON.stringify(Object.fromEntries(entries), null, 2);
@@ -1096,11 +1094,9 @@ export class Dishwasher {
       const response = await this.client.sendCommand(cmdBody); // This command starts the cycle
 
       if (response == null) {
-        this.client.debug("No response from startCycle command"); 
+        this.client.debug("No response from startCycle command");
         return false;
-      
       } else {
-
         this.accessory
           .getService("Dishwasher")
           ?.getCharacteristic(this.Characteristic.InUse)
@@ -1138,9 +1134,7 @@ export class Dishwasher {
       if (response == null) {
         this.client.debug("No response from stopCycle command");
         return false;
-      
       } else {
-
         this.accessory
           .getService("Dishwasher")
           ?.getCharacteristic(this.Characteristic.InUse)
@@ -1250,14 +1244,14 @@ export class Dishwasher {
 
     // Remove the collected services
 
-    servicesToRemove.forEach(service => {
+    servicesToRemove.forEach((service) => {
       this.client.debug(chalk.yellow(`Removing cached service: ${service.displayName}`));
       accessory.removeService(service);
     });
   }
 
   // Build a list of available dishwasher option names in a display-friendly format.
-  
+
   getAvailableItemsByType(availableType: string): [string, string][] {
     let itemsAvailable: string[] = [];
 
@@ -1426,7 +1420,6 @@ export class Dishwasher {
   }
 
   async testCases() {
-
     //======================================================
 
     // Develop test plan for dishwasher
@@ -1449,14 +1442,14 @@ export class Dishwasher {
 
     let originalMode: string;
     let originalWashTemp: string;
-    let modesAvailable: [string] = [''];
-    const washTempBase = 'cloud.smarthq.type.dishwasher.washtemp.';
+    let modesAvailable: [string] = [""];
+    const washTempBase = "cloud.smarthq.type.dishwasher.washtemp.";
 
     //const modes = ['Heavy', 'AutoSense', 'Normal'];
 
-    const temp = ['none', 'boost', 'sani', 'saniandboost'];
-    this.client.debug(' ## Start Test cases ##');
-    this.client.debug(' ##     Save current device configuration ##');
+    const temp = ["none", "boost", "sani", "saniandboost"];
+    this.client.debug(" ## Start Test cases ##");
+    this.client.debug(" ##     Save current device configuration ##");
     for (const service of this.deviceServices) {
       if (
         service.serviceDeviceType === "cloud.smarthq.device.dishwasher" &&
@@ -1471,7 +1464,7 @@ export class Dishwasher {
           if (response?.state == null) {
             this.client.debug("No response from dishwasher test state request");
             return;
-          } 
+          }
           this.client.debug(JSON.stringify(response, null, 2));
 
           originalMode = response?.state.mode as string;
@@ -1479,88 +1472,102 @@ export class Dishwasher {
 
           modesAvailable = response?.config?.regularModeAvailable as [string];
 
-          this.client.debug('---------------------------------------------------------');
-          this.client.debug(chalk.green(`Pre test state = mode:${originalMode}  washTemp:${originalWashTemp}`));
-          this.client.debug('---------------------------------------------------------');
+          this.client.debug("---------------------------------------------------------");
+          this.client.debug(
+            chalk.green(
+              `Pre test state = mode:${originalMode}  washTemp:${originalWashTemp}`,
+            ),
+          );
+          this.client.debug("---------------------------------------------------------");
         } catch (error) {
-          this.client.debug(`Dishwasher test state request failed: ${this.formatError(error)}`);
+          this.client.debug(
+            `Dishwasher test state request failed: ${this.formatError(error)}`,
+          );
           return;
         }
 
         //const originalPresetMode = response?.state.
-
       }
     }
     for (const mode of modesAvailable) {
       try {
-        const response = await this.testSetMode({mode: mode});
+        const response = await this.testSetMode({ mode: mode });
         if (response === true) {
-          this.client.debug(chalk.green(` ##     Setting mode to ${mode} ##  Outcome: ${chalk.greenBright('Valid')}`));
-        
-} else {
-
-          this.client.debug(chalk.green(` ##     Setting mode to ${mode} ##  Outcome: ${chalk.red('Invalid command')}`));
+          this.client.debug(
+            chalk.green(
+              ` ##     Setting mode to ${mode} ##  Outcome: ${chalk.greenBright("Valid")}`,
+            ),
+          );
+        } else {
+          this.client.debug(
+            chalk.green(
+              ` ##     Setting mode to ${mode} ##  Outcome: ${chalk.red("Invalid command")}`,
+            ),
+          );
         }
         for (const waterTemp of temp) {
-          this.client.debug(chalk.greenBright(` ##         Setting temp to ${washTempBase}${waterTemp} ##`));
-          await new Promise(resolve => setTimeout(resolve, 4000));
+          this.client.debug(
+            chalk.greenBright(
+              ` ##         Setting temp to ${washTempBase}${waterTemp} ##`,
+            ),
+          );
+          await new Promise((resolve) => setTimeout(resolve, 4000));
         }
       } catch (error) {
         this.platform.log.warn(`testSetMode command failed: ${this.formatError(error)}`);
         return false;
       }
     }
-    
-    this.client.debug(' ##     Restore original device configuration ##');
+
+    this.client.debug(" ##     Restore original device configuration ##");
   }
-  
-  async testSetMode({mode,
-                    temp,
-                    dry,
-                    zone,
-                    bottle,
-                    steam,
-                    silverware
-  }:                {mode?: string,
-                    temp?: string,
-                    dry?:  string,
-                    zone?: string,
-                    bottle?: boolean,
-                    steam?: boolean,
-                    silverware?: boolean
-  })
-  {
-    const 
-        cmdBody = {
-          command: {
-            washTemp: temp || this.currentWashTemp,
-            heatedDry: dry || this.currentHeatedDry,
-            washZone: zone || this.currentWashZone,
-            bottleWash: bottle || this.currentbottleWash,
-            steam: steam|| this.currentSteam,
-            silverwareWash: silverware || this.currentSilverwareWash,
-            commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
-          },
-          deviceId: this.deviceId,
-          domainType: mode || this.currentPreset,
-          kind: "service#command",
-          serviceDeviceType: "cloud.smarthq.device.dishwasher",
-          serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
-        };
 
-        try {
-          const response = await this.client.sendCommand(cmdBody); // This command sets the mode and options
+  async testSetMode({
+    mode,
+    temp,
+    dry,
+    zone,
+    bottle,
+    steam,
+    silverware,
+  }: {
+    mode?: string;
+    temp?: string;
+    dry?: string;
+    zone?: string;
+    bottle?: boolean;
+    steam?: boolean;
+    silverware?: boolean;
+  }) {
+    const cmdBody = {
+      command: {
+        washTemp: temp || this.currentWashTemp,
+        heatedDry: dry || this.currentHeatedDry,
+        washZone: zone || this.currentWashZone,
+        bottleWash: bottle || this.currentbottleWash,
+        steam: steam || this.currentSteam,
+        silverwareWash: silverware || this.currentSilverwareWash,
+        commandType: "cloud.smarthq.command.dishwasher.mode.v1.set",
+      },
+      deviceId: this.deviceId,
+      domainType: mode || this.currentPreset,
+      kind: "service#command",
+      serviceDeviceType: "cloud.smarthq.device.dishwasher",
+      serviceType: "cloud.smarthq.service.dishwasher.mode.v1",
+    };
 
-          if (response == null) {
-            this.client.debug("No response from setMode command");
-            return false;
-          }
-          this.client.debug(`Set mode ${mode} outcome: ${response.success}`);
-          return response.success;
-        
-      } catch (error) {
-        this.platform.log.warn(`testSetMode command failed: ${this.formatError(error)}`);
+    try {
+      const response = await this.client.sendCommand(cmdBody); // This command sets the mode and options
+
+      if (response == null) {
+        this.client.debug("No response from setMode command");
         return false;
       }
+      this.client.debug(`Set mode ${mode} outcome: ${response.success}`);
+      return response.success;
+    } catch (error) {
+      this.platform.log.warn(`testSetMode command failed: ${this.formatError(error)}`);
+      return false;
+    }
   }
 }

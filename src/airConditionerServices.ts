@@ -1,8 +1,22 @@
-import { AirConditioner } from './airConditioner/airConditioner.js';
-import { PlatformAccessory }  from 'homebridge';
-import { SmartHqPlatform }    from './platform.js';
-import { DeviceService }      from 'ge-smarthq';
+/** @format */
 
-export function setupAirConditionerServices(this: SmartHqPlatform, accessory: PlatformAccessory, deviceServices: DeviceService[], deviceId: string, groupAccessory?: PlatformAccessory[]) {
-  return new AirConditioner(this, accessory, deviceServices, deviceId, groupAccessory ?? []);
+import { AirConditioner } from './airConditioner/airConditioner.js';
+import { PlatformAccessory } from 'homebridge';
+import { SmartHqPlatform } from './platform.js';
+import { DeviceService } from 'ge-smarthq';
+
+export function setupAirConditionerServices(
+	this: SmartHqPlatform,
+	accessory: PlatformAccessory,
+	deviceServices: DeviceService[],
+	deviceId: string,
+	groupAccessory?: PlatformAccessory[],
+) {
+	return new AirConditioner(
+		this,
+		accessory,
+		deviceServices,
+		deviceId,
+		groupAccessory ?? [],
+	);
 }
